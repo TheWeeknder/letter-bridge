@@ -67,7 +67,7 @@ export function GameOver({
           onClick={onChangeTime}
           className="rounded-lg border-2 border-zinc-300 px-5 py-3 font-bold hover:border-emerald-500 dark:border-zinc-700"
         >
-          Change time
+          Home
         </button>
       </div>
     </section>
