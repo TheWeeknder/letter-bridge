@@ -1,0 +1,43 @@
+{
+  "name": "create_a_word_using",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "copy-data": "node scripts/copy-data.mjs",
+    "dict:fetch": "node scripts/fetch-scowl.mjs",
+    "clean": "node scripts/clean.mjs",
+    "predev": "npm run copy-data",
+    "dev": "next dev",
+    "prebuild": "npm run copy-data",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "node scripts/run-tests.mjs run",
+    "test:watch": "node scripts/run-tests.mjs",
+    "stats": "tsx scripts/stats.ts"
+  },
+  "dependencies": {
+    "motion": "^14.14.0",
+    "next": "16.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.7.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "postcss": "^8.5.33",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  },
+  "overrides": {
+    "typescript-eslint": "8.73.0"
+  }
+}

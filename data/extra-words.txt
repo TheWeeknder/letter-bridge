@@ -1,0 +1,11 @@
+# extra-words.txt — words YOU decide should count, even though the big lists
+# leave them out (usually because they are names, like the river Nile).
+#
+# How to add a word:
+#   1. Put it on its own line below, lowercase, letters only.
+#   2. Restart `npm run dev` (the file is copied to the browser on start).
+#
+# Lines starting with # are notes for humans. The game skips them
+# automatically, because they contain characters that aren't letters.
+
+nile
