@@ -124,9 +124,11 @@ describe("restarting", () => {
   });
 });
 
-describe("REPEAT_WORD (typing a word already used this streak)", () => {
+describe("WARN (too short or already used: try again)", () => {
   const afterOne = gameReducer(started, { type: "SUBMIT_CORRECT", word: "astute", nextPair: TS });
-  const repeated = gameReducer(afterOne, { type: "REPEAT_WORD", word: "astute" });
+  const REPEAT = { reason: "ALREADY_USED", word: "astute" } as const;
+  const SHORT = { reason: "TOO_SHORT", word: "ts" } as const;
+  const repeated = gameReducer(afterOne, { type: "WARN", warning: REPEAT });
 
   it("does NOT end the game: same phase, pair and streak", () => {
     expect(repeated).toMatchObject({ phase: "playing", pair: TS, streak: 1, usedWords: ["astute"] });
@@ -136,28 +138,39 @@ describe("REPEAT_WORD (typing a word already used this streak)", () => {
     expect(repeated.roundId).toBe(afterOne.roundId);
   });
 
-  it("remembers the word for the warning and counts the repeat", () => {
-    expect(repeated.repeatedWord).toBe("astute");
-    expect(repeated.repeatCount).toBe(afterOne.repeatCount + 1);
+  it("remembers the warning and counts it", () => {
+    expect(repeated.warning).toEqual(REPEAT);
+    expect(repeated.warningCount).toBe(afterOne.warningCount + 1);
   });
 
-  it("counts up again for the same word twice, so the box shakes again", () => {
-    const twice = gameReducer(repeated, { type: "REPEAT_WORD", word: "astute" });
-    expect(twice.repeatCount).toBe(repeated.repeatCount + 1);
+  it("handles a too-short word the same way", () => {
+    const short = gameReducer(afterOne, { type: "WARN", warning: SHORT });
+    expect(short).toMatchObject({ phase: "playing", pair: TS, streak: 1, warning: SHORT });
+    expect(short.roundId).toBe(afterOne.roundId);
+  });
+
+  it("counts up again for the same warning twice, so the box shakes again", () => {
+    const twice = gameReducer(repeated, { type: "WARN", warning: REPEAT });
+    expect(twice.warningCount).toBe(repeated.warningCount + 1);
+  });
+
+  it("replaces the previous warning with the latest one", () => {
+    const thenShort = gameReducer(repeated, { type: "WARN", warning: SHORT });
+    expect(thenShort.warning).toEqual(SHORT);
   });
 
   it("clears the warning on the next correct answer", () => {
     const next = gameReducer(repeated, { type: "SUBMIT_CORRECT", word: "tests", nextPair: BK });
-    expect(next.repeatedWord).toBeNull();
+    expect(next.warning).toBeNull();
   });
 
   it("clears the warning when a new game starts", () => {
     const over = gameReducer(repeated, { type: "FAIL", reason: "TIMEOUT" });
     const again = gameReducer(over, { type: "START", timeLimit: 5, pair: AE });
-    expect(again.repeatedWord).toBeNull();
+    expect(again.warning).toBeNull();
   });
 
   it("is ignored when not playing", () => {
-    expect(gameReducer(initialGameState, { type: "REPEAT_WORD", word: "astute" })).toBe(initialGameState);
+    expect(gameReducer(initialGameState, { type: "WARN", warning: REPEAT })).toBe(initialGameState);
   });
 });

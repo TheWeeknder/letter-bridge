@@ -6,8 +6,8 @@
 // replaces it with a brand-new input, which is automatically empty and
 // focused (autoFocus). No extra "clear the box" code needed.
 //
-// REPEATED WORDS: if the player types a word they already used, the game
-// doesn't end. Instead the parent passes a `warning` and a new `shakeKey`:
+// WARNINGS: if the player types a word that's too short or already used,
+// the game doesn't end. Instead the parent passes a `warning` and a new `shakeKey`:
 //   - the box shakes (like a head shaking "no") and turns red
 //   - the warning text appears underneath
 //   - the box is cleared, ready for another try
@@ -19,7 +19,7 @@ import { SHAKE_DURATION, SHAKE_X } from "./shake";
 
 export interface AnswerInputProps {
   onSubmit: (text: string) => void;
-  warning?: string | null; // e.g. "You already used 'astute'. Try another word!"
+  warning?: string | null; // e.g. "'ab' is too short. Use at least 3 letters!"
   shakeKey?: number; // changes every time the box should shake again
 }
 

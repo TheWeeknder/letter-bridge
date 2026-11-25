@@ -2,7 +2,13 @@
 // Most tests use a tiny hand-made dictionary so the expected answer is obvious;
 // the last block re-checks the examples from the game rules on the REAL list.
 import { describe, expect, it } from "vitest";
-import { explainGameOver, explainRepeat, REJECTION_MESSAGES, validateAnswer } from "@/lib/game/validator";
+import {
+  explainGameOver,
+  explainWarning,
+  isWarningReason,
+  REJECTION_MESSAGES,
+  validateAnswer,
+} from "@/lib/game/validator";
 import { readLocalWordData } from "@/lib/node/readLocalWordData";
 import type { LetterPair } from "@/lib/game/types";
 
@@ -104,8 +110,19 @@ describe("REJECTION_MESSAGES / explainGameOver", () => {
     expect(explainGameOver("TIMEOUT", null, AE)).toBe("Time's up!");
   });
 
-  it("builds the repeated-word warning", () => {
-    expect(explainRepeat("astute")).toBe("You already used 'astute'. Try another word!");
+  it("builds the try-again warnings", () => {
+    expect(explainWarning({ reason: "ALREADY_USED", word: "astute" })).toBe(
+      "You already used 'astute'. Try another word!",
+    );
+    expect(explainWarning({ reason: "TOO_SHORT", word: "ae" })).toBe("'ae' is too short. Use at least 3 letters!");
+  });
+
+  it("only too-short and repeated words are warnings; the rest end the game", () => {
+    expect(isWarningReason("TOO_SHORT")).toBe(true);
+    expect(isWarningReason("ALREADY_USED")).toBe(true);
+    for (const reason of ["EMPTY", "WRONG_START", "WRONG_END", "NOT_A_WORD"] as const) {
+      expect(isWarningReason(reason)).toBe(false);
+    }
   });
 });
 

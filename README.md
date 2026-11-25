@@ -13,10 +13,10 @@ Every correct word adds 1 to your streak and brings a new pair of letters. The g
 1. Pick how many seconds you get per word: **10**, **5** or **3**.
 2. Type a word that **starts** with the first letter and **ends** with the second, then press Enter.
 3. Keep going as long as you can. The game ends when:
-   - the word isn't in the dictionary, is too short (under 3 letters), or has the wrong first or last letter, or
+   - the word isn't in the dictionary or has the wrong first or last letter, or
    - the timer runs out.
 
-If you type a word you **already used** in this streak, the game doesn't end. The box shakes and you can try again, but the clock keeps running.
+If you type a word that's **too short** (under 3 letters) or one you **already used** in this streak, the game doesn't end. The box shakes and you can try again, but the clock keeps running.
 
 When the game ends you see why, plus a couple of words that would have worked. Your best streak is saved in your browser.
 

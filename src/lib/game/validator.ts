@@ -17,8 +17,8 @@
 // Order matters when an answer breaks several rules at once: "xyz" for A…e
 // is reported as WRONG_START, the most helpful thing to fix first.
 // The validator only REPORTS the reason. What happens next is the game's
-// choice: ALREADY_USED lets the player try again (see useGame), while every
-// other reason ends the game.
+// choice: TOO_SHORT and ALREADY_USED let the player try again (see
+// isWarningReason and useGame), while every other reason ends the game.
 // Timeouts are NOT handled here. The validator only judges typed answers;
 // the clock is handled by useCountdown and useGame.
 // =============================================================================
@@ -26,7 +26,14 @@
 import { MIN_WORD_LENGTH } from "./config";
 import { displayEnd, displayStart } from "./display";
 import { normalizeWord } from "./normalize";
-import type { GameOverReason, LetterPair, RejectionReason, ValidationResult } from "./types";
+import type {
+  GameOverReason,
+  LetterPair,
+  RejectionReason,
+  ValidationResult,
+  Warning,
+  WarningReason,
+} from "./types";
 
 /** Short, general text for each rejection reason. */
 export const REJECTION_MESSAGES: Record<RejectionReason, string> = {
@@ -112,9 +119,22 @@ export function explainGameOver(
 }
 
 /**
- * The warning shown under the answer box when the player repeats a word.
- * A repeat doesn't end the game, so this is a nudge rather than a verdict.
+ * Does this rejection only WARN the player instead of ending the game?
+ * Too-short and repeated words are honest slips, not wrong words.
  */
-export function explainRepeat(word: string): string {
-  return `You already used '${word}'. Try another word!`;
+export function isWarningReason(reason: RejectionReason): reason is WarningReason {
+  return reason === "TOO_SHORT" || reason === "ALREADY_USED";
+}
+
+/**
+ * The warning shown under the answer box. These don't end the game, so the
+ * text is a nudge to try again rather than a verdict.
+ */
+export function explainWarning({ reason, word }: Warning): string {
+  switch (reason) {
+    case "TOO_SHORT":
+      return `'${word}' is too short. Use at least ${MIN_WORD_LENGTH} letters!`;
+    case "ALREADY_USED":
+      return `You already used '${word}'. Try another word!`;
+  }
 }

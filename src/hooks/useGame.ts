@@ -18,7 +18,7 @@ import { gameReducer, initialGameState } from "@/lib/game/gameReducer";
 import { pickLetterPair } from "@/lib/game/letterPicker";
 import { normalizeWord } from "@/lib/game/normalize";
 import type { GameState, LetterPair, WordData } from "@/lib/game/types";
-import { validateAnswer } from "@/lib/game/validator";
+import { isWarningReason, validateAnswer } from "@/lib/game/validator";
 import { useCountdown } from "./useCountdown";
 
 export interface UseGameResult {
@@ -76,10 +76,10 @@ export function useGame(data: WordData | null): UseGameResult {
 
     if (result.ok) {
       dispatch({ type: "SUBMIT_CORRECT", word: result.word, nextPair: pickNextPair(data) });
-    } else if (result.reason === "ALREADY_USED") {
-      // A repeat is an honest slip, not a wrong word: warn and let the player
-      // try again on the same pair (the clock keeps running).
-      dispatch({ type: "REPEAT_WORD", word: normalizeWord(input) });
+    } else if (isWarningReason(result.reason)) {
+      // Too short or repeated: an honest slip, not a wrong word. Warn and let
+      // the player try again on the same pair (the clock keeps running).
+      dispatch({ type: "WARN", warning: { reason: result.reason, word: normalizeWord(input) } });
     } else {
       dispatch({ type: "FAIL", reason: result.reason, input });
     }

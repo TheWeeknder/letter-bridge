@@ -27,7 +27,7 @@ import { useWordData } from "@/hooks/useWordData";
 import { APP_NAME } from "@/lib/brand";
 import type { TimeLimit } from "@/lib/game/config";
 import { isNewBest } from "@/lib/game/bestStreak";
-import { explainRepeat } from "@/lib/game/validator";
+import { explainWarning } from "@/lib/game/validator";
 
 export default function Home() {
   const { data, loading, error } = useWordData();
@@ -100,8 +100,8 @@ export default function Home() {
           <AnswerInput
             key={state.roundId}
             onSubmit={submit}
-            warning={state.repeatedWord ? explainRepeat(state.repeatedWord) : null}
-            shakeKey={state.repeatCount}
+            warning={state.warning ? explainWarning(state.warning) : null}
+            shakeKey={state.warningCount}
           />
         </section>
       )}

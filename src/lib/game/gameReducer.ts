@@ -16,8 +16,9 @@
 //                             +---+             +--RESTART--> setup
 //                        SUBMIT_CORRECT
 //                   (streak + 1, new pair)
-//                        REPEAT_WORD
-//              (same pair, same timer, warning shown)
+//                           WARN
+//              (too short / repeated word: same pair,
+//               same timer, warning shown)
 //
 // Actions that don't make sense in the current phase are IGNORED (the same
 // state is returned). Example: the timer fires "FAIL: TIMEOUT" a split second
@@ -36,8 +37,8 @@ export const initialGameState: GameState = {
   roundId: 0,
   gameOverReason: null,
   lastInput: null,
-  repeatedWord: null,
-  repeatCount: 0,
+  warning: null,
+  warningCount: 0,
 };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -55,7 +56,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         roundId: state.roundId + 1, // new round -> timer restarts
         gameOverReason: null,
         lastInput: null,
-        repeatedWord: null,
+        warning: null,
       };
     }
 
@@ -70,21 +71,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         usedWords: [...state.usedWords, action.word],
         pair: action.nextPair,
         roundId: state.roundId + 1,
-        repeatedWord: null, // new pair: the old warning no longer applies
+        warning: null, // new pair: the old warning no longer applies
       };
     }
 
-    // --- The player typed a word they already used: warn, but keep playing --
+    // --- Too short or already used: warn, but keep playing ------------------
     // Nothing else changes: same pair, same streak, and the SAME roundId, so
-    // the timer keeps running. A repeat costs time, but it isn't game over.
-    // repeatCount always goes up (even for the same word twice) so the
-    // screen can tell a NEW repeat happened and shake again.
-    case "REPEAT_WORD": {
+    // the timer keeps running. A slip costs time, but it isn't game over.
+    // warningCount always goes up (even for the same word twice) so the
+    // screen can tell a NEW warning happened and shake again.
+    case "WARN": {
       if (state.phase !== "playing") return state;
       return {
         ...state,
-        repeatedWord: action.word,
-        repeatCount: state.repeatCount + 1,
+        warning: action.warning,
+        warningCount: state.warningCount + 1,
       };
     }
 
