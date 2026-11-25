@@ -10,6 +10,10 @@
 //
 // Phases:  lobby --start--> playing --everyone out--> finished --rematch--> lobby
 //
+// SEATS: a player keeps their seat when their connection drops (connected:
+// false). Coming back within RECONNECT_GRACE_MS puts them right back, even
+// mid-game. Outside a game, a seat left empty longer than that is freed.
+//
 // The game is "parallel survival": every player gets the SAME sequence of
 // letter pairs (from the shared seed) and plays their own streak on their own
 // timer. A wrong answer or running out of time knocks you out. When everyone
@@ -20,7 +24,7 @@ import type { TimeLimit } from "../game/config";
 import { pairForRound } from "../game/random";
 import type { GameOverReason, LetterPair, WordData } from "../game/types";
 import { isWarningReason, validateAnswer } from "../game/validator";
-import { MAX_PLAYERS, MIN_PLAYERS, NICKNAME_MAX_LENGTH, TIMEOUT_GRACE_MS } from "./config";
+import { MAX_PLAYERS, MIN_PLAYERS, NICKNAME_MAX_LENGTH, RECONNECT_GRACE_MS, TIMEOUT_GRACE_MS } from "./config";
 
 export type RoomPhase = "lobby" | "playing" | "finished";
 
@@ -28,8 +32,10 @@ export type RoomPhase = "lobby" | "playing" | "finished";
 export type PlayerStatus = "lobby" | "playing" | "out";
 
 export interface RoomPlayer {
-  id: string; // the connection id (the same as the browser's socket.id)
+  id: string; // a public id for this seat (the server keeps the secret that proves who owns it)
   name: string;
+  connected: boolean; // false = connection lost; the seat is kept for a while
+  disconnectedAt: number | null; // server time (ms) the connection was lost
   status: PlayerStatus;
   streak: number;
   usedWords: string[]; // words accepted this game, in order
@@ -51,12 +57,14 @@ export interface RoomState {
 
 /** Everything that can happen in a room. `now` is the server's clock in ms. */
 export type RoomEvent =
-  | { type: "join"; playerId: string; name: string }
-  | { type: "leave"; playerId: string }
+  | { type: "join"; playerId: string; name: string; now: number } // join, rejoin after a drop, or rename
+  | { type: "disconnect"; playerId: string; now: number } // connection lost: keep the seat for now
+  | { type: "leave"; playerId: string } // left on purpose: free the seat now
+  | { type: "kick"; playerId: string; targetId: string } // host removes someone (not during a game)
   | { type: "start"; playerId: string; timeLimit: TimeLimit; seed: string; now: number }
   | { type: "answer"; playerId: string; round: number; input: string; now: number }
   | { type: "timeout"; playerId: string; round: number }
-  | { type: "tick"; now: number } // the server's clock checking for expired rounds
+  | { type: "tick"; now: number } // the server's clock: expired rounds and abandoned seats
   | { type: "rematch"; playerId: string };
 
 /** Either the new state, or why the event was refused (shown to that player). */
@@ -75,6 +83,8 @@ function lobbyPlayer(id: string, name: string): RoomPlayer {
   return {
     id,
     name,
+    connected: true,
+    disconnectedAt: null,
     status: "lobby",
     streak: 0,
     usedWords: [],
@@ -133,6 +143,23 @@ function knockOut(player: RoomPlayer, reason: GameOverReason, now: number | null
   return { ...player, status: "out", gameOverReason: reason, outAt: now, lastInput: input, roundStartedAt: null };
 }
 
+/** Free a seat; if it was the host's, the longest-waiting player takes over. */
+function removePlayer(state: RoomState, id: string): RoomState {
+  const players = state.players.filter((p) => p.id !== id);
+  // Everyone's gone: start over with a fresh room.
+  if (players.length === 0) return createRoom();
+  return finishIfDone({
+    ...state,
+    players,
+    hostId: state.hostId === id ? (players.find((p) => p.connected) ?? players[0]).id : state.hostId,
+  });
+}
+
+/** Has this disconnected player been gone long enough to lose their seat? */
+function seatExpired(player: RoomPlayer, now: number): boolean {
+  return !player.connected && player.disconnectedAt !== null && now - player.disconnectedAt >= RECONNECT_GRACE_MS;
+}
+
 /** Once nobody is still playing, the game is finished. */
 function finishIfDone(state: RoomState): RoomState {
   if (state.phase === "playing" && !state.players.some((p) => p.status === "playing")) {
@@ -148,9 +175,19 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
       const name = cleanNickname(event.name);
       if (!name) return refuse("Please choose a nickname.");
 
-      // Already in the room: just update the name.
+      // Already has a seat: rename, and/or come back after a lost connection.
+      // Mid-game, a returning player gets a fresh round clock: their screen
+      // starts the round again, and the server's clock should match it.
       if (state.players.some((p) => p.id === event.playerId)) {
-        return accept(updatePlayer(state, event.playerId, (p) => ({ ...p, name })));
+        return accept(
+          updatePlayer(state, event.playerId, (p) => ({
+            ...p,
+            name,
+            connected: true,
+            disconnectedAt: null,
+            roundStartedAt: p.status === "playing" ? event.now : p.roundStartedAt,
+          })),
+        );
       }
 
       if (state.phase !== "lobby") return refuse("This game has already started.");
@@ -163,22 +200,27 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
       });
     }
 
-    // --- Someone leaves (closed the tab, lost connection…) ---------------------
+    // --- Connection lost: keep the seat, in case they come straight back -----
+    case "disconnect": {
+      if (!state.players.some((p) => p.id === event.playerId)) return accept(state);
+      return accept(
+        updatePlayer(state, event.playerId, (p) => ({ ...p, connected: false, disconnectedAt: event.now })),
+      );
+    }
+
+    // --- Someone leaves on purpose ("Leave room") -----------------------------
     case "leave": {
       if (!state.players.some((p) => p.id === event.playerId)) return accept(state); // wasn't in the room
-      const players = state.players.filter((p) => p.id !== event.playerId);
+      return accept(removePlayer(state, event.playerId));
+    }
 
-      // Everyone's gone: start over with a fresh room.
-      if (players.length === 0) return accept(createRoom());
-
-      return accept(
-        finishIfDone({
-          ...state,
-          players,
-          // If the host left, the longest-waiting player takes over.
-          hostId: state.hostId === event.playerId ? players[0].id : state.hostId,
-        }),
-      );
+    // --- The host removes someone (e.g. a seat nobody is using) ---------------
+    case "kick": {
+      if (event.playerId !== state.hostId) return refuse("Only the host can remove players.");
+      if (state.phase === "playing") return refuse("You can't remove players during a game.");
+      if (event.targetId === event.playerId) return refuse("You can't remove yourself. Use Leave room instead.");
+      if (!state.players.some((p) => p.id === event.targetId)) return accept(state);
+      return accept(removePlayer(state, event.targetId));
     }
 
     // --- The host starts the game ----------------------------------------------
@@ -260,14 +302,19 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
     // --- The server's clock: knock out anyone whose round has expired --------
     // This catches players whose browser went quiet (closed laptop, slow
     // network, or a tampered page that never reports its own timeout).
+    // Outside a game it also frees seats that have been empty too long.
     case "tick": {
-      if (state.phase !== "playing" || state.timeLimit === null) return accept(state);
-      const timeLimit = state.timeLimit;
-      const players = state.players.map((p) => {
-        const deadline = roundDeadline(p, timeLimit);
-        return deadline !== null && event.now > deadline ? knockOut(p, "TIMEOUT", event.now, null) : p;
-      });
-      return accept(finishIfDone({ ...state, players }));
+      if (state.phase === "playing" && state.timeLimit !== null) {
+        const timeLimit = state.timeLimit;
+        const players = state.players.map((p) => {
+          const deadline = roundDeadline(p, timeLimit);
+          return deadline !== null && event.now > deadline ? knockOut(p, "TIMEOUT", event.now, null) : p;
+        });
+        return accept(finishIfDone({ ...state, players }));
+      }
+      const expired = state.players.filter((p) => seatExpired(p, event.now));
+      if (expired.length === 0) return accept(state);
+      return accept(expired.reduce((s, p) => removePlayer(s, p.id), state));
     }
 
     // --- The host wants another round with the same players ------------------
@@ -285,12 +332,21 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
 }
 
 /**
- * The earliest moment (ms) any player's round expires, or null if nobody is
- * playing. The server sets a timer for this so it can send a "tick".
+ * The next moment (ms) something needs checking: a player's round expiring
+ * (during a game), or an empty seat running out of grace (outside a game).
+ * Null if nothing is pending. The server sets a timer for it and sends a "tick".
  */
-export function nextDeadline(state: RoomState): number | null {
-  if (state.phase !== "playing" || state.timeLimit === null) return null;
-  const timeLimit = state.timeLimit;
-  const deadlines = state.players.map((p) => roundDeadline(p, timeLimit)).filter((d): d is number => d !== null);
-  return deadlines.length > 0 ? Math.min(...deadlines) : null;
+export function nextWakeup(state: RoomState): number | null {
+  const times: number[] = [];
+  if (state.phase === "playing" && state.timeLimit !== null) {
+    for (const p of state.players) {
+      const deadline = roundDeadline(p, state.timeLimit);
+      if (deadline !== null) times.push(deadline);
+    }
+  } else {
+    for (const p of state.players) {
+      if (!p.connected && p.disconnectedAt !== null) times.push(p.disconnectedAt + RECONNECT_GRACE_MS);
+    }
+  }
+  return times.length > 0 ? Math.min(...times) : null;
 }

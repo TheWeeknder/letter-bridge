@@ -5,9 +5,13 @@
 //   bad code          -> "that code doesn't look right"
 //   no nickname yet   -> NicknameForm
 //   connecting        -> "Connecting…"
-//   couldn't get in   -> "room is full" / "game already started"
+//   no seat           -> Spectator (room full / game already running / removed)
 //   lobby             -> Lobby (player list, host picks a time and starts)
 //   playing/finished  -> MultiplayerGame (the game, then the results)
+//
+// If the connection drops, the current screen stays put with a small
+// "Reconnecting…" banner, so a game in progress isn't interrupted. When the
+// connection is back, the server puts you straight back in your seat.
 // =============================================================================
 
 import { useState } from "react";
@@ -19,6 +23,7 @@ import { LinkButton, ScreenHeader } from "../ui";
 import { Lobby } from "./Lobby";
 import { MultiplayerGame } from "./MultiplayerGame";
 import { NicknameForm } from "./NicknameForm";
+import { Spectator } from "./Spectator";
 
 /** A short message with a way back home. */
 function Notice({ title, message }: { title: string; message: string }) {
@@ -42,10 +47,8 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
   // Changing your name keeps you connected: the server just renames you.
   const [editingName, setEditingName] = useState(false);
 
-  const { room, connected, myId, error, start, sendAnswer, sendTimeout, rematch } = useRoom(
-    code,
-    isValidRoomCode(code) ? nickname : null,
-  );
+  const roomApi = useRoom(code, isValidRoomCode(code) ? nickname : null);
+  const { room, connected, myId, error } = roomApi;
   // Start downloading the word lists right away, while people gather in the lobby.
   const { data, error: wordsError } = useWordData();
 
@@ -67,28 +70,42 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
     );
   }
 
-  if (!room || !connected) {
-    return <p className="text-zinc-500">Connecting to room {code}…</p>;
-  }
+  if (!room) return <p className="text-zinc-500">Connecting to room {code}…</p>;
+
+  const banner = !connected && (
+    <p role="status" className="rounded-full bg-amber-500/15 px-3 py-1 text-sm text-amber-800 dark:text-amber-300">
+      Connection lost. Reconnecting…
+    </p>
+  );
 
   const me = room.players.find((p) => p.id === myId);
 
-  // Connected, but the server didn't let us in.
+  // Connected, but no seat: watch instead (room full, game already running, removed…).
   if (!me) {
-    if (error) return <Notice title="Can't join" message={error} />;
-    return <p className="text-zinc-500">Joining room {code}…</p>;
+    if (!error && connected && room.phase === "lobby") return <p className="text-zinc-500">Joining room {code}…</p>;
+    return (
+      <>
+        {banner}
+        <Spectator code={code} room={room} reason={error} onRetry={roomApi.retryJoin} />
+      </>
+    );
   }
 
   if (room.phase === "lobby") {
     return (
-      <Lobby
-        code={code}
-        room={room}
-        myId={myId}
-        error={error}
-        onStart={start}
-        onChangeName={() => setEditingName(true)}
-      />
+      <>
+        {banner}
+        <Lobby
+          code={code}
+          room={room}
+          myId={me.id}
+          error={error}
+          onStart={roomApi.start}
+          onChangeName={() => setEditingName(true)}
+          onKick={roomApi.kick}
+          onLeave={roomApi.leave}
+        />
+      </>
     );
   }
 
@@ -96,14 +113,18 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
   if (wordsError) return <Notice title="Couldn't load the words" message={wordsError} />;
   if (!data) return <p className="text-zinc-500">Loading word lists…</p>;
   return (
-    <MultiplayerGame
-      key={room.seed}
-      room={room}
-      myId={myId}
-      data={data}
-      sendAnswer={sendAnswer}
-      sendTimeout={sendTimeout}
-      onRematch={rematch}
-    />
+    <>
+      {banner}
+      <MultiplayerGame
+        key={room.seed}
+        room={room}
+        myId={me.id}
+        data={data}
+        sendAnswer={roomApi.sendAnswer}
+        sendTimeout={roomApi.sendTimeout}
+        onRematch={roomApi.rematch}
+        onLeave={roomApi.leave}
+      />
+    </>
   );
 }

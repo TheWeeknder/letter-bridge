@@ -17,6 +17,15 @@ export const MIN_PLAYERS = 2;
  */
 export const TIMEOUT_GRACE_MS = 1500;
 
+/**
+ * How long (ms) a player who lost their connection keeps their seat. Reload
+ * the page or lose signal for a moment and you're back in the same seat.
+ * In the lobby and on the results screen, a seat that stays empty this long
+ * is freed. During a game the seat is kept (your score still counts), and the
+ * round clock simply runs out if you don't come back in time.
+ */
+export const RECONNECT_GRACE_MS = 20_000;
+
 /** Longest nickname allowed (longer ones are cut off). */
 export const NICKNAME_MAX_LENGTH = 16;
 

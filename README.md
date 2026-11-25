@@ -24,7 +24,7 @@ When the game ends you see why, plus a couple of words that would have worked. Y
 
 ### Playing with friends
 
-Choose **Play with friends**, then **Create a room**, and share the 5-letter code or invite link with up to 3 friends. They choose **Play with friends** too and type the code under **Have a code?** (or just open the link), then pick a nickname. The first player in the room is the host: they choose the seconds per word and press **Start game**.
+Choose **Play with friends**, then **Create a room**, and share the 5-letter code or invite link with up to 3 friends. They choose **Play with friends** too and type the code under **Have a code?**, open the link, or **scan the QR code** in the waiting room with their phone camera, then pick a nickname. The first player in the room is the host: they choose the seconds per word and press **Start game**.
 
 Everyone then gets the **same letter pairs in the same order** and plays their own streak on their own timer, with the others' streaks shown live above the letters. The usual rules apply: a wrong word or running out of time knocks you out, and too-short or repeated words are only warnings. When everyone is out, the **highest streak wins** (on a tie, whoever lasted longer). The host can then start a **rematch**.
 
@@ -52,6 +52,7 @@ npm run dev      # start the game at http://localhost:3000
 | `npm run dict:fetch` | Re-download the SCOWL word additions (see [The dictionary](#the-dictionary)) |
 | `npm run clean` | Delete the `.next` build cache. Use it if `npm run dev` shows strange "module not found" errors. |
 | `npm run party:dev` | Start the multiplayer room server locally on port 8787 (run it next to `npm run dev`) |
+| `npm run dev:lan` / `npm run party:dev:lan` | The same two servers, reachable from phones on your Wi-Fi (see [Playing on a phone](#playing-on-a-phone)) |
 | `npm run party:check` | Type-check the room server |
 | `npm run party:types` | Regenerate the room server's Cloudflare types (after changing `wrangler.jsonc`) |
 | `npm run party:deploy` | Deploy the room server to Cloudflare (needs your own Cloudflare account) |
@@ -67,14 +68,31 @@ npm run party:dev   # the room server, at localhost:8787
 
 Open two browser windows (one of them private/incognito, so each gets its own nickname), create a room in one and join it from the other. No Cloudflare account is needed for local play.
 
-To put rooms online: run `npm run party:deploy` (it asks you to log in to Cloudflare), then set `NEXT_PUBLIC_PARTY_HOST` to the address it prints (e.g. `letter-bridge-rooms.<you>.workers.dev`) in your Vercel project settings and redeploy.
+### Putting multiplayer online
+
+The game itself goes on Vercel (see [Playing on a phone](#playing-on-a-phone)); the room server goes on Cloudflare. Both have free tiers that are plenty for this.
+
+1. **Deploy the room server:** run `npm run party:deploy`. The first time, it opens a browser to log in to (or create) a free Cloudflare account. When it finishes it prints the address, e.g. `https://letter-bridge-rooms.<you>.workers.dev`.
+2. **Point the game at it:** in your Vercel project, go to **Settings → Environment Variables** and add `NEXT_PUBLIC_PARTY_HOST` = that address **without** `https://` (e.g. `letter-bridge-rooms.<you>.workers.dev`). See [.env.example](.env.example).
+3. **Redeploy** the game on Vercel (the variable is baked in at build time).
+
+Rooms then work from anywhere, over a secure connection, and the waiting room's QR code points at your real site. Run `npm run party:deploy` again whenever you change the room server (`party/` or `src/lib/multiplayer/`, or the game rules it shares).
+
+### When connections drop
+
+- **Reload or lose signal briefly:** you're put back in your seat automatically (a small "Reconnecting…" banner shows meanwhile), even mid-game with your streak and current letters. Your round clock restarts when you're back; if you're away longer than the round's time, you're out as if time ran out.
+- **Seats are kept for 20 seconds.** In the waiting room or on the results screen, a seat that stays empty longer is freed. **Leave room** frees it immediately.
+- **The host can remove players** from the waiting room (the **Remove** link next to their name).
+- **Arriving late:** if the room is full or a game is already running, you watch the live standings instead, and get a seat automatically when the host starts the next game.
 
 ## Playing on a phone
 
 - **Quick test on your Wi-Fi:**
-  1. Run `npx next dev -H 0.0.0.0`.
+  1. Run `npm run dev:lan` (and `npm run party:dev:lan` for multiplayer). These are like `dev` / `party:dev`, but reachable from other devices on your network.
   2. Find your computer's local IP address (`ipconfig` on Windows, `ifconfig` on Mac/Linux).
-  3. Open `http://<that-ip>:3000` on the phone.
+  3. Open `http://<that-ip>:3000` on the phone, or on the computer: then a room's **QR code** points phones at the right address and they can just scan it.
+
+  Phones are allowed in for `192.168.x.x` and `10.x.x.x` addresses (see `allowedDevOrigins` in `next.config.ts`). If your network uses another range, add it there. Windows may ask to let Node.js through the firewall the first time: allow it on private networks.
 - **Install it as an app:** phones only offer *Add to Home Screen / Install* on **HTTPS** sites. The easiest way is a free [Vercel](https://vercel.com) deploy:
   1. Sign in to Vercel with GitHub and choose **Add New → Project**.
   2. Import this repository and keep the default settings (Vercel detects Next.js).

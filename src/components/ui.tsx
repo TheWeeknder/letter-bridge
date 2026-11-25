@@ -52,24 +52,38 @@ export function LinkButton({
   href,
   variant = "primary",
   className = "",
+  onClick,
   children,
 }: {
   href: string;
   variant?: keyof typeof BUTTON_VARIANTS;
   className?: string;
+  onClick?: () => void; // runs before navigating (e.g. leave a room)
   children: ReactNode;
 }) {
   return (
-    <Link href={href} className={`${BUTTON_BASE} ${BUTTON_VARIANTS[variant]} flex items-center justify-center ${className}`}>
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`${BUTTON_BASE} ${BUTTON_VARIANTS[variant]} flex items-center justify-center ${className}`}
+    >
       {children}
     </Link>
   );
 }
 
 /** A quiet "← Back" link at the bottom of a screen. */
-export function BackLink({ href = "/", children = "Back" }: { href?: string; children?: ReactNode }) {
+export function BackLink({
+  href = "/",
+  onClick,
+  children = "Back",
+}: {
+  href?: string;
+  onClick?: () => void; // runs before navigating (e.g. leave a room)
+  children?: ReactNode;
+}) {
   return (
-    <Link href={href} className="text-sm text-zinc-500 underline-offset-4 hover:text-foreground hover:underline">
+    <Link href={href} onClick={onClick} className="text-sm text-zinc-500 underline-offset-4 hover:text-foreground hover:underline">
       ← {children}
     </Link>
   );

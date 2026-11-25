@@ -8,7 +8,7 @@
 import { rankPlayers, type RoomState } from "@/lib/multiplayer/room";
 import { SectionHeading } from "../ui";
 
-export function Standings({ room, myId, title }: { room: RoomState; myId: string; title: string }) {
+export function Standings({ room, myId, title }: { room: RoomState; myId: string | null; title: string }) {
   const ranked = rankPlayers(room.players);
   const finished = room.phase === "finished";
 
@@ -32,7 +32,9 @@ export function Standings({ room, myId, title }: { room: RoomState; myId: string
                 {p.name}
                 {p.id === myId && <span className="font-normal text-zinc-500"> (you)</span>}
               </span>
-              {p.status === "playing" ? (
+              {!p.connected && p.status === "playing" ? (
+                <span className="text-xs text-zinc-500">reconnecting…</span>
+              ) : p.status === "playing" ? (
                 <span className="text-xs text-emerald-600 dark:text-emerald-400">playing</span>
               ) : (
                 !finished && <span className="text-xs text-zinc-500">out</span>

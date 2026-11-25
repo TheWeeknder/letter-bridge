@@ -2,11 +2,11 @@
 // function, so a whole multiplayer game can be "played" with plain function
 // calls. The server clock is passed in as `now`, so timing is testable too.
 import { describe, expect, it } from "vitest";
-import { MAX_PLAYERS, TIMEOUT_GRACE_MS } from "@/lib/multiplayer/config";
+import { MAX_PLAYERS, RECONNECT_GRACE_MS, TIMEOUT_GRACE_MS } from "@/lib/multiplayer/config";
 import {
   cleanNickname,
   createRoom,
-  nextDeadline,
+  nextWakeup,
   rankPlayers,
   type RoomEvent,
   type RoomPlayer,
@@ -45,7 +45,9 @@ function refusal(state: RoomState, event: RoomEvent, words: RoomWords | null = W
 }
 
 const T0 = 1_000_000; // the server time the game starts
-const join = (playerId: string, name = playerId): RoomEvent => ({ type: "join", playerId, name });
+const join = (playerId: string, name = playerId, now = 0): RoomEvent => ({ type: "join", playerId, name, now });
+const disconnect = (playerId: string, now: number): RoomEvent => ({ type: "disconnect", playerId, now });
+const kick = (playerId: string, targetId: string): RoomEvent => ({ type: "kick", playerId, targetId });
 const leave = (playerId: string): RoomEvent => ({ type: "leave", playerId });
 const start = (playerId: string, now = T0): RoomEvent => ({ type: "start", playerId, timeLimit: 5, seed: "seed-1", now });
 const player = (state: RoomState, id: string): RoomPlayer => state.players.find((p) => p.id === id)!;
@@ -214,10 +216,10 @@ describe("timeouts and the server clock", () => {
     expect(player(tick, "b")).toMatchObject({ status: "out", gameOverReason: "TIMEOUT" });
   });
 
-  it("nextDeadline is the earliest expiry among players still in", () => {
+  it("nextWakeup is the earliest round expiry among players still in", () => {
     const one = apply(playing, answer(playing, "a", T0 + 3000));
-    expect(nextDeadline(one)).toBe(T0 + 5000 + TIMEOUT_GRACE_MS);
-    expect(nextDeadline(twoPlayers)).toBeNull();
+    expect(nextWakeup(one)).toBe(T0 + 5000 + TIMEOUT_GRACE_MS);
+    expect(nextWakeup(twoPlayers)).toBeNull();
   });
 });
 
@@ -255,6 +257,63 @@ describe("finishing, ranking and rematch", () => {
     expect(lobby.players.every((p) => p.status === "lobby" && p.streak === 0 && p.usedWords.length === 0)).toBe(
       true,
     );
+  });
+});
+
+describe("lost connections and seats", () => {
+  it("a dropped connection keeps the seat (marked as disconnected)", () => {
+    const dropped = apply(twoPlayers, disconnect("b", 500));
+    expect(dropped.players.map((p) => p.id)).toEqual(["a", "b"]);
+    expect(player(dropped, "b")).toMatchObject({ connected: false, disconnectedAt: 500 });
+  });
+
+  it("coming back puts the player in the same seat", () => {
+    const back = apply(twoPlayers, disconnect("b", 500), join("b", "Bo", 900));
+    expect(player(back, "b")).toMatchObject({ connected: true, disconnectedAt: null, name: "Bo" });
+    expect(back.players).toHaveLength(2);
+  });
+
+  it("can come back mid-game, keeping the streak, with a fresh round clock", () => {
+    const one = apply(playing, answer(playing, "b", T0 + 1000));
+    const back = apply(one, disconnect("b", T0 + 2000), join("b", "Bo", T0 + 4000));
+    expect(player(back, "b")).toMatchObject({ status: "playing", streak: 1, connected: true, roundStartedAt: T0 + 4000 });
+  });
+
+  it("frees a lobby seat that stays empty past the grace period (and moves host on)", () => {
+    const dropped = apply(twoPlayers, disconnect("a", 1000));
+    expect(nextWakeup(dropped)).toBe(1000 + RECONNECT_GRACE_MS);
+    const early = apply(dropped, { type: "tick", now: 1000 + RECONNECT_GRACE_MS - 1 });
+    expect(early.players).toHaveLength(2);
+    const freed = apply(dropped, { type: "tick", now: 1000 + RECONNECT_GRACE_MS });
+    expect(freed.players.map((p) => p.id)).toEqual(["b"]);
+    expect(freed.hostId).toBe("b");
+  });
+
+  it("keeps a disconnected player's seat during a game; the round clock knocks them out", () => {
+    const dropped = apply(playing, disconnect("b", T0 + 100));
+    const later = apply(dropped, { type: "tick", now: T0 + 5000 + TIMEOUT_GRACE_MS + 1 });
+    expect(player(later, "b")).toMatchObject({ status: "out", gameOverReason: "TIMEOUT" });
+    expect(later.players).toHaveLength(2);
+  });
+
+  it("host moves to someone still connected when the host's seat is freed", () => {
+    const three = apply(createRoom(), join("a"), join("b"), join("c"));
+    const state = apply(three, disconnect("b", 0), { type: "leave", playerId: "a" });
+    expect(state.hostId).toBe("c");
+  });
+});
+
+describe("kick", () => {
+  const three = apply(createRoom(), join("a"), join("b"), join("c"));
+
+  it("the host can remove another player in the lobby", () => {
+    expect(apply(three, kick("a", "c")).players.map((p) => p.id)).toEqual(["a", "b"]);
+  });
+
+  it("only the host, never yourself, and not during a game", () => {
+    expect(refusal(three, kick("b", "c"))).toMatch(/host/);
+    expect(refusal(three, kick("a", "a"))).toMatch(/yourself/);
+    expect(refusal(playing, kick("a", "b"))).toMatch(/during a game/);
   });
 });
 

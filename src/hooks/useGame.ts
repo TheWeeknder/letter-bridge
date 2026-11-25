@@ -22,7 +22,7 @@ import { getExampleWords } from "@/lib/game/examples";
 import { gameReducer, initialGameState } from "@/lib/game/gameReducer";
 import { normalizeWord } from "@/lib/game/normalize";
 import { newSeed, pairForRound } from "@/lib/game/random";
-import type { GameOverReason, GameState, WordData } from "@/lib/game/types";
+import type { GameOverReason, GameState, LetterPair, WordData } from "@/lib/game/types";
 import { isWarningReason, validateAnswer } from "@/lib/game/validator";
 import { useCountdown } from "./useCountdown";
 
@@ -38,8 +38,16 @@ export interface UseGameResult {
 }
 
 export interface UseGameOptions {
-  /** Start playing straight away with this time limit and seed (multiplayer). */
-  autoStart?: { timeLimit: TimeLimit; seed: string };
+  /**
+   * Start playing straight away with this time limit and seed (multiplayer).
+   * `resume` continues a game already in progress (e.g. after a page reload),
+   * from the streak, words and pair the room server remembered.
+   */
+  autoStart?: {
+    timeLimit: TimeLimit;
+    seed: string;
+    resume?: { streak: number; usedWords: string[]; pair: LetterPair };
+  };
   /** Called for every answer that counts: right OR game-ending. `round` = the streak it was for. */
   onAnswer?: (round: number, input: string) => void;
   /** Called when time runs out on round `round`. */
@@ -52,16 +60,17 @@ export function useGame(data: WordData | null, options: UseGameOptions = {}): Us
   // useReducer: React stores the state and runs gameReducer on every dispatch.
   // With autoStart (and the words loaded), the very first state is already a
   // started game, so there's no extra "start" step or flash of the setup screen.
-  const [state, dispatch] = useReducer(gameReducer, initialGameState, (initial) =>
-    autoStart && data
-      ? gameReducer(initial, {
-          type: "START",
-          timeLimit: autoStart.timeLimit,
-          seed: autoStart.seed,
-          pair: pairForRound(data.eligiblePairs, autoStart.seed, 0, null),
-        })
-      : initial,
-  );
+  const [state, dispatch] = useReducer(gameReducer, initialGameState, (initial) => {
+    if (!autoStart || !data) return initial;
+    const started = gameReducer(initial, {
+      type: "START",
+      timeLimit: autoStart.timeLimit,
+      seed: autoStart.seed,
+      pair: pairForRound(data.eligiblePairs, autoStart.seed, 0, null),
+    });
+    const resume = autoStart.resume;
+    return resume ? { ...started, streak: resume.streak, usedWords: resume.usedWords, pair: resume.pair } : started;
+  });
 
   // --- The timer: runs only while playing, restarts every round ------------
   const { secondsLeft, isTimeUp } = useCountdown({

@@ -23,7 +23,7 @@ import type { WordData } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
 import { rankPlayers, type RoomState } from "@/lib/multiplayer/room";
 import { PlayingScreen } from "../PlayingScreen";
-import { Button, LinkButton, ScreenHeader } from "../ui";
+import { BackLink, Button, LinkButton, ScreenHeader } from "../ui";
 import { OpponentsStrip } from "./OpponentsStrip";
 import { Standings } from "./Standings";
 
@@ -34,12 +34,33 @@ export interface MultiplayerGameProps {
   sendAnswer: (round: number, input: string) => void;
   sendTimeout: (round: number) => void;
   onRematch: () => void;
+  onLeave: () => void; // free my seat before going home
 }
 
-export function MultiplayerGame({ room, myId, data, sendAnswer, sendTimeout, onRematch }: MultiplayerGameProps) {
+export function MultiplayerGame({
+  room,
+  myId,
+  data,
+  sendAnswer,
+  sendTimeout,
+  onRematch,
+  onLeave,
+}: MultiplayerGameProps) {
   const me = room.players.find((p) => p.id === myId);
   const game = useGame(data, {
-    autoStart: room.seed && room.timeLimit ? { seed: room.seed, timeLimit: room.timeLimit } : undefined,
+    // Pick up where the server says we are: round 0 for a new game, or our
+    // streak, words and pair if we're coming back after a reload.
+    autoStart:
+      room.seed && room.timeLimit
+        ? {
+            seed: room.seed,
+            timeLimit: room.timeLimit,
+            resume:
+              me && me.pair && (me.streak > 0 || me.usedWords.length > 0)
+                ? { streak: me.streak, usedWords: me.usedWords, pair: me.pair }
+                : undefined,
+          }
+        : undefined,
     onAnswer: sendAnswer,
     onTimeout: sendTimeout,
   });
@@ -66,7 +87,9 @@ export function MultiplayerGame({ room, myId, data, sendAnswer, sendTimeout, onR
   // Why I'm out: the server's reason if it has one (it's the one that counts).
   const reason = me?.gameOverReason ?? state.gameOverReason;
   const input = me?.gameOverReason ? me.lastInput : state.lastInput;
-  const why = reason && state.pair ? explainGameOver(reason, input, state.pair) : null;
+  // The pair they were on when knocked out (the server's, if it has one).
+  const lastPair = me?.pair ?? state.pair;
+  const why = reason && lastPair ? explainGameOver(reason, input, lastPair) : null;
   const myStreak = me?.streak ?? state.streak;
 
   // --- Results: everyone is out ---------------------------------------------
@@ -89,7 +112,7 @@ export function MultiplayerGame({ room, myId, data, sendAnswer, sendTimeout, onR
           ) : (
             <p className="text-sm text-zinc-500">Waiting for {host?.name ?? "the host"} to start a rematch…</p>
           )}
-          <LinkButton href="/" variant="secondary">
+          <LinkButton href="/" variant="secondary" onClick={onLeave}>
             Leave room
           </LinkButton>
         </div>
@@ -118,6 +141,7 @@ export function MultiplayerGame({ room, myId, data, sendAnswer, sendTimeout, onR
         </p>
       )}
       <p className="text-zinc-500">Waiting for the others to finish…</p>
+      <BackLink onClick={onLeave}>Leave room</BackLink>
     </section>
   );
 }
