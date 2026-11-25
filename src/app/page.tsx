@@ -24,6 +24,7 @@ import { TimeLimitPicker } from "@/components/TimeLimitPicker";
 import { useBestStreak } from "@/hooks/useBestStreak";
 import { useGame } from "@/hooks/useGame";
 import { useWordData } from "@/hooks/useWordData";
+import { APP_NAME } from "@/lib/brand";
 import type { TimeLimit } from "@/lib/game/config";
 import { isNewBest } from "@/lib/game/bestStreak";
 
@@ -54,7 +55,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 p-6">
       {/* Slightly smaller title on narrow phone screens (sm: = 640px and up). */}
-      <h1 className="text-center text-3xl font-bold sm:text-4xl">Generate a Word!</h1>
+      <h1 className="text-center text-3xl font-bold sm:text-4xl">{APP_NAME}</h1>
 
       {/* --- Word lists still downloading, or failed --- */}
       {loading && <p className="text-zinc-500">Loading word lists…</p>}

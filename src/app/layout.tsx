@@ -9,8 +9,9 @@
 // serifs (bars top and bottom) and its "l" has a curved tail.
 // =============================================================================
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible_Next, Geist_Mono } from "next/font/google";
+import { APP_DESCRIPTION, APP_NAME, BACKGROUND_DARK, BACKGROUND_LIGHT } from "@/lib/brand";
 import "./globals.css";
 
 // next/font downloads the font at build time and serves it from our own site,
@@ -27,9 +28,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Text for the browser tab, search results and link previews.
 export const metadata: Metadata = {
-  title: "Generate a Word!",
-  description: "Type a word that starts and ends with the given letters before time runs out.",
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
+  // iPhones: when opened from the home screen, show the game full-screen
+  // (no Safari bars), with this name under the icon.
+  appleWebApp: { capable: true, title: APP_NAME },
+};
+
+// How the page fits the phone screen.
+// themeColor tints the phone's status bar / browser bar to match the page,
+// with a separate colour when the phone is in dark mode.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: BACKGROUND_LIGHT },
+    { media: "(prefers-color-scheme: dark)", color: BACKGROUND_DARK },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
