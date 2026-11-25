@@ -15,9 +15,15 @@
 //   transforms on the graphics card without recalculating the page layout,
 //   so the bar stays smooth even on slow devices.
 // - `origin-left` makes it shrink towards the left edge instead of the middle.
+//
+// RED WARNING: in the last 30% of the time the bar turns red. Changing the
+// colour class doesn't restart the animation, because `key` stays the same.
 // =============================================================================
 
 import { motion } from "motion/react";
+
+/** Below this fraction of time left, the bar turns red (0.3 = last 30%). */
+const DANGER_FRACTION = 0.3;
 
 export interface CountdownBarProps {
   seconds: number; // total length of the countdown
@@ -29,6 +35,7 @@ export interface CountdownBarProps {
 export function CountdownBar({ seconds, roundId, running, secondsLeft }: CountdownBarProps) {
   // What fraction of the bar should be filled when it's frozen (0 to 1).
   const frozenFraction = seconds > 0 ? secondsLeft / seconds : 0;
+  const inDanger = frozenFraction <= DANGER_FRACTION;
 
   return (
     // The grey "track" behind the bar.
@@ -42,7 +49,10 @@ export function CountdownBar({ seconds, roundId, running, secondsLeft }: Countdo
     >
       <motion.div
         key={roundId}
-        className="h-full origin-left rounded-full bg-emerald-500"
+        className={
+          "h-full origin-left rounded-full transition-colors duration-300 " +
+          (inDanger ? "bg-red-500" : "bg-emerald-500")
+        }
         initial={{ scaleX: 1 }}
         animate={{ scaleX: running ? 0 : frozenFraction }}
         transition={running ? { duration: seconds, ease: "linear" } : { duration: 0 }}

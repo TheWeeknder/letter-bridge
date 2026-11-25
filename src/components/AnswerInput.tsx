@@ -35,6 +35,8 @@ export function AnswerInput({ onSubmit }: AnswerInputProps) {
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
+        // The phone keyboard's Enter key says "Go" instead of a return arrow.
+        enterKeyHint="go"
         aria-label="Your word"
         placeholder="Type a word, press Enter"
         className="w-full rounded-lg border-2 border-zinc-300 bg-transparent px-4 py-3 text-center text-2xl outline-none focus:border-emerald-500 dark:border-zinc-700"
