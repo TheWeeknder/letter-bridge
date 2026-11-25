@@ -21,6 +21,7 @@ import { GameOver } from "@/components/GameOver";
 import { LetterPair } from "@/components/LetterPair";
 import { StreakCounter } from "@/components/StreakCounter";
 import { TimeLimitPicker } from "@/components/TimeLimitPicker";
+import { ScreenHeader, SectionHeading } from "@/components/ui";
 import { useGame } from "@/hooks/useGame";
 import { useHighScores } from "@/hooks/useHighScores";
 import { useWordData } from "@/hooks/useWordData";
@@ -79,66 +80,80 @@ export default function Home() {
     .join(" · ");
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 p-6">
-      {/* Slightly smaller title on narrow phone screens (sm: = 640px and up). */}
-      <h1 className="text-center text-3xl font-bold sm:text-4xl">{APP_NAME}</h1>
+    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-6 pt-6 pb-10">
+      {/* The app's name: a small wordmark at the top, so each screen's own
+          title ("How to play", "Game over") is the clear headline. */}
+      <header className="text-center">
+        <h1 className="text-lg font-bold">{APP_NAME}</h1>
+      </header>
 
-      {/* --- Word lists still downloading, or failed --- */}
-      {loading && <p className="text-zinc-500">Loading word lists…</p>}
-      {error && <p className="text-red-600">Could not load the word lists: {error}</p>}
+      {/* The current screen, centred in the space below the wordmark. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-8 py-8">
+        {/* --- Word lists still downloading, or failed --- */}
+        {loading && <p className="text-zinc-500">Loading word lists…</p>}
+        {error && <p className="text-red-600">Could not load the word lists: {error}</p>}
 
-      {/* --- Setup: choose a time limit --- */}
-      {data && state.phase === "setup" && (
-        <section className="flex flex-col items-center gap-5 text-center">
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Type a word that <strong>starts</strong> with the first letter and <strong>ends</strong> with the
-            second, before time runs out. Every correct word adds 1 to your streak.
-          </p>
-          <p className="font-bold">Seconds per word:</p>
-          <TimeLimitPicker onPick={startGame} selected={state.timeLimit} />
-          {bestPerMode && <p className="text-sm text-zinc-500 tabular-nums">Best — {bestPerMode}</p>}
-        </section>
-      )}
-
-      {/* --- Playing --- */}
-      {data && state.phase === "playing" && state.pair && state.timeLimit && (
-        <section className="flex w-full flex-col items-center gap-6">
-          <StreakCounter streak={state.streak} best={bestFor(boards, state.timeLimit)} />
-          <LetterPair pair={state.pair} />
-          <div className="flex w-full flex-col items-center gap-1">
-            <CountdownBar
-              seconds={state.timeLimit}
-              roundId={state.roundId}
-              running
-              secondsLeft={secondsLeft}
+        {/* --- Setup: choose a time limit --- */}
+        {data && state.phase === "setup" && (
+          <section className="flex flex-col items-center gap-8 text-center">
+            <ScreenHeader
+              title="How to play"
+              subtitle={
+                <>
+                  Type a word that <strong className="text-foreground">starts</strong> with the first letter and{" "}
+                  <strong className="text-foreground">ends</strong> with the second, before time runs out. Every
+                  correct word adds 1 to your streak.
+                </>
+              }
             />
-            <span className="text-sm text-zinc-500 tabular-nums">{secondsLeft.toFixed(1)}s</span>
-          </div>
-          {/* key={roundId}: a fresh, empty, focused input for every new pair */}
-          <AnswerInput
-            key={state.roundId}
-            onSubmit={submit}
-            warning={state.warning ? explainWarning(state.warning) : null}
-            shakeKey={state.warningCount}
-          />
-        </section>
-      )}
+            <div className="flex flex-col items-center gap-3">
+              <SectionHeading>Seconds per word</SectionHeading>
+              <TimeLimitPicker onPick={startGame} selected={state.timeLimit} />
+              {bestPerMode && <p className="text-sm text-zinc-500 tabular-nums">Best — {bestPerMode}</p>}
+            </div>
+          </section>
+        )}
 
-      {/* --- Game over --- */}
-      {data && state.phase === "over" && state.pair && state.gameOverReason && state.timeLimit && (
-        <GameOver
-          streak={state.streak}
-          board={shownBoard}
-          rank={rank}
-          reason={state.gameOverReason}
-          lastInput={state.lastInput}
-          pair={state.pair}
-          timeLimit={state.timeLimit}
-          exampleWords={exampleWords}
-          onPlayAgain={playAgain}
-          onChangeTime={restart}
-        />
-      )}
+        {/* --- Playing --- */}
+        {data && state.phase === "playing" && state.pair && state.timeLimit && (
+          <section className="flex w-full flex-col items-center gap-8">
+            <StreakCounter streak={state.streak} best={bestFor(boards, state.timeLimit)} />
+            <LetterPair pair={state.pair} />
+            <div className="flex w-full flex-col items-center gap-1">
+              <CountdownBar
+                seconds={state.timeLimit}
+                roundId={state.roundId}
+                running
+                secondsLeft={secondsLeft}
+              />
+              <span className="text-sm text-zinc-500 tabular-nums">{secondsLeft.toFixed(1)}s</span>
+            </div>
+            {/* key={roundId}: a fresh, empty, focused input for every new pair */}
+            <AnswerInput
+              key={state.roundId}
+              onSubmit={submit}
+              warning={state.warning ? explainWarning(state.warning) : null}
+              shakeKey={state.warningCount}
+            />
+          </section>
+        )}
+
+        {/* --- Game over --- */}
+        {data && state.phase === "over" && state.pair && state.gameOverReason && state.timeLimit && (
+          <GameOver
+            streak={state.streak}
+            board={shownBoard}
+            rank={rank}
+            reason={state.gameOverReason}
+            lastInput={state.lastInput}
+            pair={state.pair}
+            timeLimit={state.timeLimit}
+            exampleWords={exampleWords}
+            onPlayAgain={playAgain}
+            onChangeTime={restart}
+          />
+        )}
+      </div>
     </main>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 // =============================================================================
 // LetterPair — shows the START letter (uppercase) and END letter (lowercase).
+// The letters are the "hero" of the playing screen: the biggest thing on it.
 //
 // Two things make look-alike letters (uppercase "I" vs lowercase "l")
 // impossible to mix up:
@@ -22,7 +23,7 @@ function LetterBox({ letter, caption }: { letter: string; caption: string }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <span className="text-7xl leading-none font-bold">{letter}</span>
-      <span className="text-xs tracking-wide text-zinc-500 uppercase">{caption}</span>
+      <span className="text-sm text-zinc-500">{caption}</span>
     </div>
   );
 }

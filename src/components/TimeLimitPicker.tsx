@@ -6,6 +6,7 @@
 // =============================================================================
 
 import { TIME_LIMITS, type TimeLimit } from "@/lib/game/config";
+import { BUTTON_BASE } from "./ui";
 
 export interface TimeLimitPickerProps {
   onPick: (seconds: TimeLimit) => void;
@@ -17,11 +18,12 @@ export function TimeLimitPicker({ onPick, selected }: TimeLimitPickerProps) {
     <div className="flex gap-3" role="group" aria-label="Seconds per word">
       {TIME_LIMITS.map((seconds) => (
         <button
+          type="button"
           key={seconds}
           onClick={() => onPick(seconds)}
           aria-pressed={selected === seconds}
           className={
-            "w-20 rounded-lg border-2 px-4 py-3 text-xl font-bold transition-colors " +
+            `${BUTTON_BASE} w-20 border-2 text-xl ` +
             (selected === seconds
               ? "border-emerald-500 bg-emerald-500 text-white"
               : "border-zinc-300 hover:border-emerald-500 dark:border-zinc-700")

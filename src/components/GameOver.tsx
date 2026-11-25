@@ -1,7 +1,8 @@
 "use client";
 // =============================================================================
-// GameOver — final streak, why the game ended, example words, and two ways
-// to continue: play again with the same time, or choose a different time.
+// GameOver — why the game ended, the final streak, the high score board,
+// example words, and two ways to continue: play again with the same time, or
+// go back home to choose a different time.
 //
 // ANIMATIONS (skipped if the player turned on "reduce motion"):
 // - The reason sentence SHAKES side to side for wrong answers, like a head
@@ -11,12 +12,12 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { TimeLimit } from "@/lib/game/config";
-import { displayEnd, displayStart } from "@/lib/game/display";
 import type { HighScoreEntry } from "@/lib/game/highScores";
 import type { GameOverReason, LetterPair } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
 import { HighScoreBoard } from "./HighScoreBoard";
 import { SHAKE_DURATION, SHAKE_X } from "./shake";
+import { Button, ScreenHeader } from "./ui";
 
 export interface GameOverProps {
   streak: number;
@@ -47,16 +48,28 @@ export function GameOver({
   const shouldShake = !reduceMotion && reason !== "TIMEOUT";
 
   return (
-    <section className="flex flex-col items-center gap-5 text-center">
-      <h2 className="text-3xl font-bold">Game over</h2>
+    <section className="flex w-full flex-col items-center gap-8 text-center">
+      {/* 1. What happened. The reason shakes for wrong answers. */}
+      <ScreenHeader
+        title="Game over"
+        subtitle={
+          <motion.span
+            className="inline-block"
+            animate={shouldShake ? { x: SHAKE_X } : undefined}
+            transition={{ duration: SHAKE_DURATION }}
+          >
+            {explainGameOver(reason, lastInput, pair)}
+          </motion.span>
+        }
+      />
 
-      {/* The final score */}
-      <div>
-        <div className="text-xs tracking-wide text-zinc-500 uppercase">Final streak</div>
-        <div className="text-6xl font-bold tabular-nums">{streak}</div>
+      {/* 2. The score: the one big thing on this screen. */}
+      <div className="flex flex-col items-center gap-1">
+        <div className="text-7xl leading-none font-bold tabular-nums">{streak}</div>
+        <div className="text-sm text-zinc-500">Final streak</div>
         {rank !== null ? (
           <motion.div
-            className="mt-1 font-bold text-emerald-600 dark:text-emerald-400"
+            className="mt-2 font-bold text-emerald-600 dark:text-emerald-400"
             initial={reduceMotion ? false : { scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.2 }}
@@ -64,50 +77,36 @@ export function GameOver({
             {rank === 1 ? "New best!" : `New high score! #${rank}`}
           </motion.div>
         ) : (
-          <div className="mt-1 text-sm text-zinc-500 tabular-nums">
+          <div className="mt-2 text-sm text-zinc-500 tabular-nums">
             Best: {Math.max(board[0]?.streak ?? 0, streak)}
           </div>
         )}
       </div>
 
-      {/* Why it ended, e.g. "'aeioue' isn't in the dictionary." */}
-      <motion.p
-        className="text-lg text-red-600 dark:text-red-400"
-        animate={shouldShake ? { x: SHAKE_X } : undefined}
-        transition={{ duration: SHAKE_DURATION }}
-      >
-        {explainGameOver(reason, lastInput, pair)}
-      </motion.p>
-
-      <HighScoreBoard board={board} timeLimit={timeLimit} highlightIndex={rank === null ? null : rank - 1} />
-
-      {/* Words that would have worked for the last pair */}
-      {exampleWords.length > 0 && (
-        <p className="text-zinc-600 dark:text-zinc-400">
-          For <strong>{displayStart(pair)}</strong> … <strong>{displayEnd(pair)}</strong> you could have tried:{" "}
-          {exampleWords.map((word, i) => (
-            <span key={word}>
-              {i > 0 && " or "}
-              <strong className="text-foreground">{word}</strong>
-            </span>
-          ))}
-        </p>
+      {/* 3. High scores and 4. words that would have worked */}
+      {(board.length > 0 || exampleWords.length > 0) && (
+        <div className="flex w-full flex-col items-center gap-4">
+          <HighScoreBoard board={board} timeLimit={timeLimit} highlightIndex={rank === null ? null : rank - 1} />
+          {exampleWords.length > 0 && (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              You could have tried:{" "}
+              {exampleWords.map((word, i) => (
+                <span key={word}>
+                  {i > 0 && " · "}
+                  <strong className="text-foreground">{word}</strong>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
       )}
 
-      {/* What next? flex-wrap lets the buttons stack on very narrow phones. */}
-      <div className="flex flex-wrap justify-center gap-3">
-        <button
-          onClick={onPlayAgain}
-          className="min-h-12 rounded-lg bg-emerald-500 px-5 py-3 font-bold text-white hover:bg-emerald-600"
-        >
-          Play again ({timeLimit}s)
-        </button>
-        <button
-          onClick={onChangeTime}
-          className="min-h-12 rounded-lg border-2 border-zinc-300 px-5 py-3 font-bold hover:border-emerald-500 dark:border-zinc-700"
-        >
+      {/* 5. What next? Stacked full-width buttons are easy to tap on a phone. */}
+      <div className="flex w-full max-w-xs flex-col gap-3">
+        <Button onClick={onPlayAgain}>Play again ({timeLimit}s)</Button>
+        <Button variant="secondary" onClick={onChangeTime}>
           Home
-        </button>
+        </Button>
       </div>
     </section>
   );

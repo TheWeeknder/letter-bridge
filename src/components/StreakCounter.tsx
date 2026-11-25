@@ -23,8 +23,8 @@ export function StreakCounter({ streak, best }: StreakCounterProps) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="text-center">
-      <div className="text-xs tracking-wide text-zinc-500 uppercase">Streak</div>
+    <div className="flex flex-col items-center gap-1 text-center">
+      <div className="text-sm text-zinc-500">Streak</div>
       <motion.div
         key={streak}
         className="text-4xl font-bold tabular-nums"
@@ -36,7 +36,7 @@ export function StreakCounter({ streak, best }: StreakCounterProps) {
       >
         {streak}
       </motion.div>
-      <div className="text-xs text-zinc-500 tabular-nums">Best: {Math.max(best, streak)}</div>
+      <div className="text-sm text-zinc-500 tabular-nums">Best: {Math.max(best, streak)}</div>
     </div>
   );
 }
