@@ -20,10 +20,11 @@
 // choice: ALREADY_USED lets the player try again (see useGame), while every
 // other reason ends the game.
 // Timeouts are NOT handled here. The validator only judges typed answers;
-// the game loop (step e) handles the clock.
+// the clock is handled by useCountdown and useGame.
 // =============================================================================
 
 import { MIN_WORD_LENGTH } from "./config";
+import { displayEnd, displayStart } from "./display";
 import { normalizeWord } from "./normalize";
 import type { GameOverReason, LetterPair, RejectionReason, ValidationResult } from "./types";
 
@@ -89,8 +90,8 @@ export function explainGameOver(
   pair: LetterPair,
 ): string {
   const word = input ? normalizeWord(input) : "";
-  const start = pair.start.toUpperCase(); // shown uppercase, like on screen
-  const end = pair.end.toLowerCase(); // shown lowercase, like on screen
+  const start = displayStart(pair); // shown uppercase, like on screen
+  const end = displayEnd(pair); // shown lowercase, like on screen
 
   switch (reason) {
     case "TIMEOUT":
@@ -108,4 +109,12 @@ export function explainGameOver(
     case "ALREADY_USED":
       return `You already used '${word}' in this streak.`;
   }
+}
+
+/**
+ * The warning shown under the answer box when the player repeats a word.
+ * A repeat doesn't end the game, so this is a nudge rather than a verdict.
+ */
+export function explainRepeat(word: string): string {
+  return `You already used '${word}'. Try another word!`;
 }

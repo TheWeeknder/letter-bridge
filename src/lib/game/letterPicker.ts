@@ -2,7 +2,7 @@
 // letterPicker.ts — choose the next START/END letters for the player.
 //
 // The picker NEVER invents letters. It only chooses from `eligible`, the list
-// of pairs that step (a) already checked have at least MIN_WORDS_PER_PAIR
+// of pairs that pairIndex.ts already checked have at least MIN_WORDS_PER_PAIR
 // common words. That is what guarantees every prompt is solvable.
 //
 // WHY the `rng` parameter: Math.random() gives different results every run,

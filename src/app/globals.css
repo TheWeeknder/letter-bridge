@@ -15,9 +15,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /* `font-sans` = Atkinson Hyperlegible Next (loaded in layout.tsx) */
-  --font-sans: var(--font-hyperlegible), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-}
+  --font-sans: var(--font-hyperlegible), ui-sans-serif, system-ui, sans-serif;}
 
 @media (prefers-color-scheme: dark) {
   :root {

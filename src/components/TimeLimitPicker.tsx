@@ -10,20 +10,18 @@ import { TIME_LIMITS, type TimeLimit } from "@/lib/game/config";
 export interface TimeLimitPickerProps {
   onPick: (seconds: TimeLimit) => void;
   selected?: TimeLimit | null; // highlights the current choice (optional)
-  disabled?: boolean; // e.g. while the word lists are still loading
 }
 
-export function TimeLimitPicker({ onPick, selected, disabled }: TimeLimitPickerProps) {
+export function TimeLimitPicker({ onPick, selected }: TimeLimitPickerProps) {
   return (
     <div className="flex gap-3" role="group" aria-label="Seconds per word">
       {TIME_LIMITS.map((seconds) => (
         <button
           key={seconds}
           onClick={() => onPick(seconds)}
-          disabled={disabled}
           aria-pressed={selected === seconds}
           className={
-            "w-20 rounded-lg border-2 px-4 py-3 text-xl font-bold transition-colors disabled:opacity-40 " +
+            "w-20 rounded-lg border-2 px-4 py-3 text-xl font-bold transition-colors " +
             (selected === seconds
               ? "border-emerald-500 bg-emerald-500 text-white"
               : "border-zinc-300 hover:border-emerald-500 dark:border-zinc-700")

@@ -2,7 +2,7 @@
 // Most tests use a tiny hand-made dictionary so the expected answer is obvious;
 // the last block re-checks the examples from the game rules on the REAL list.
 import { describe, expect, it } from "vitest";
-import { explainGameOver, REJECTION_MESSAGES, validateAnswer } from "@/lib/game/validator";
+import { explainGameOver, explainRepeat, REJECTION_MESSAGES, validateAnswer } from "@/lib/game/validator";
 import { readLocalWordData } from "@/lib/node/readLocalWordData";
 import type { LetterPair } from "@/lib/game/types";
 
@@ -102,6 +102,10 @@ describe("REJECTION_MESSAGES / explainGameOver", () => {
     expect(explainGameOver("ALREADY_USED", "astute", AE)).toBe("You already used 'astute' in this streak.");
     expect(explainGameOver("EMPTY", "", AE)).toBe(REJECTION_MESSAGES.EMPTY);
     expect(explainGameOver("TIMEOUT", null, AE)).toBe("Time's up!");
+  });
+
+  it("builds the repeated-word warning", () => {
+    expect(explainRepeat("astute")).toBe("You already used 'astute'. Try another word!");
   });
 });
 

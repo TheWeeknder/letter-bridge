@@ -7,6 +7,8 @@
 // =============================================================================
 
 import { GENERATION_LIST_FILE, MIN_WORDS_PER_PAIR, VALIDATION_LIST_FILES } from "../src/lib/game/config";
+import { displayEnd, displayStart } from "../src/lib/game/display";
+import { pairKey } from "../src/lib/game/pairIndex";
 import { parseWordList } from "../src/lib/game/wordLists";
 import { readDataFile, readLocalWordData } from "../src/lib/node/readLocalWordData";
 
@@ -45,11 +47,11 @@ for (const n of [1, 5, 10, 15, 20, 30, 50]) {
 
 // --- 3. The biggest and smallest eligible pairs -----------------------------
 const eligible = data.eligiblePairs
-  .map((p) => ({ ...p, words: data.pairIndex.get(`${p.start}|${p.end}`)! }))
+  .map((p) => ({ ...p, words: data.pairIndex.get(pairKey(p.start, p.end))! }))
   .sort((a, b) => b.words.length - a.words.length);
 
 const show = (p: (typeof eligible)[number]) =>
-  `  ${p.start.toUpperCase()} … ${p.end}: ${String(p.words.length).padStart(3)} words  (e.g. ${p.words.slice(0, 4).join(", ")})`;
+  `  ${displayStart(p)} … ${displayEnd(p)}: ${String(p.words.length).padStart(3)} words  (e.g. ${p.words.slice(0, 4).join(", ")})`;
 
 console.log(`\n=== ${eligible.length} eligible pairs at N = ${MIN_WORDS_PER_PAIR} ===`);
 console.log("Easiest (most words):");

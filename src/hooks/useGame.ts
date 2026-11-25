@@ -17,7 +17,7 @@ import { getExampleWords } from "@/lib/game/examples";
 import { gameReducer, initialGameState } from "@/lib/game/gameReducer";
 import { pickLetterPair } from "@/lib/game/letterPicker";
 import { normalizeWord } from "@/lib/game/normalize";
-import type { GameState, WordData } from "@/lib/game/types";
+import type { GameState, LetterPair, WordData } from "@/lib/game/types";
 import { validateAnswer } from "@/lib/game/validator";
 import { useCountdown } from "./useCountdown";
 
@@ -42,12 +42,19 @@ export function useGame(data: WordData | null): UseGameResult {
     onExpire: () => dispatch({ type: "FAIL", reason: "TIMEOUT" }),
   });
 
+  /**
+   * Pick a random pair that differs from the current one. Randomness stays
+   * HERE, outside the reducer. Passing the last pair (even from the previous
+   * game) avoids an instant repeat.
+   */
+  function pickNextPair(words: WordData): LetterPair {
+    return pickLetterPair(words.eligiblePairs, Math.random, state.pair);
+  }
+
   // --- Actions the UI can call ----------------------------------------------
   function start(timeLimit: TimeLimit) {
     if (!data) return; // word lists not loaded yet
-    // Passing the last pair (from the previous game) avoids an instant repeat.
-    const pair = pickLetterPair(data.eligiblePairs, Math.random, state.pair);
-    dispatch({ type: "START", timeLimit, pair });
+    dispatch({ type: "START", timeLimit, pair: pickNextPair(data) });
   }
 
   function submit(input: string) {
@@ -68,9 +75,7 @@ export function useGame(data: WordData | null): UseGameResult {
     });
 
     if (result.ok) {
-      // Pick the next pair HERE (randomness stays out of the reducer).
-      const nextPair = pickLetterPair(data.eligiblePairs, Math.random, state.pair);
-      dispatch({ type: "SUBMIT_CORRECT", word: result.word, nextPair });
+      dispatch({ type: "SUBMIT_CORRECT", word: result.word, nextPair: pickNextPair(data) });
     } else if (result.reason === "ALREADY_USED") {
       // A repeat is an honest slip, not a wrong word: warn and let the player
       // try again on the same pair (the clock keeps running).

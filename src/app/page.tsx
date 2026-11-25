@@ -27,6 +27,7 @@ import { useWordData } from "@/hooks/useWordData";
 import { APP_NAME } from "@/lib/brand";
 import type { TimeLimit } from "@/lib/game/config";
 import { isNewBest } from "@/lib/game/bestStreak";
+import { explainRepeat } from "@/lib/game/validator";
 
 export default function Home() {
   const { data, loading, error } = useWordData();
@@ -43,6 +44,13 @@ export default function Home() {
   function startGame(timeLimit: TimeLimit) {
     setBestBeforeGame(best);
     start(timeLimit);
+  }
+
+  // The game-over screen's "Play again" reuses the last time limit. It only
+  // renders when timeLimit is set, so the fallback never actually runs.
+  const lastTimeLimit = state.timeLimit;
+  function playAgain() {
+    if (lastTimeLimit) startGame(lastTimeLimit);
   }
 
   // When a game ends (by a wrong answer OR the timer), save the streak if it
@@ -92,9 +100,7 @@ export default function Home() {
           <AnswerInput
             key={state.roundId}
             onSubmit={submit}
-            warning={
-              state.repeatedWord ? `You already used '${state.repeatedWord}'. Try another word!` : null
-            }
+            warning={state.repeatedWord ? explainRepeat(state.repeatedWord) : null}
             shakeKey={state.repeatCount}
           />
         </section>
@@ -111,7 +117,7 @@ export default function Home() {
           pair={state.pair}
           timeLimit={state.timeLimit}
           exampleWords={exampleWords}
-          onPlayAgain={() => startGame(state.timeLimit!)}
+          onPlayAgain={playAgain}
           onChangeTime={restart}
         />
       )}

@@ -10,6 +10,7 @@
 //      so even without the font you always know which is which.
 // =============================================================================
 
+import { displayEnd, displayStart } from "@/lib/game/display";
 import type { LetterPair as LetterPairType } from "@/lib/game/types";
 
 export interface LetterPairProps {
@@ -27,17 +28,17 @@ function LetterBox({ letter, caption }: { letter: string; caption: string }) {
 }
 
 export function LetterPair({ pair }: LetterPairProps) {
+  const start = displayStart(pair);
+  const end = displayEnd(pair);
+
   return (
     // aria-label gives screen readers a clear sentence instead of "I dot dot dot l".
-    <div
-      className="flex items-start gap-6"
-      aria-label={`Starts with ${pair.start.toUpperCase()}, ends with lowercase ${pair.end}`}
-    >
-      <LetterBox letter={pair.start.toUpperCase()} caption="starts with" />
+    <div className="flex items-start gap-6" aria-label={`Starts with ${start}, ends with lowercase ${end}`}>
+      <LetterBox letter={start} caption="starts with" />
       <span className="text-5xl leading-[4.5rem] text-zinc-400" aria-hidden>
         …
       </span>
-      <LetterBox letter={pair.end.toLowerCase()} caption="ends with" />
+      <LetterBox letter={end} caption="ends with" />
     </div>
   );
 }

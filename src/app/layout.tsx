@@ -10,7 +10,7 @@
 // =============================================================================
 
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible_Next, Geist_Mono } from "next/font/google";
+import { Atkinson_Hyperlegible_Next } from "next/font/google";
 import { APP_DESCRIPTION, APP_NAME, BACKGROUND_DARK, BACKGROUND_LIGHT } from "@/lib/brand";
 import "./globals.css";
 
@@ -19,12 +19,6 @@ import "./globals.css";
 // `variable` exposes it as a CSS variable that globals.css plugs into Tailwind.
 const hyperlegible = Atkinson_Hyperlegible_Next({
   variable: "--font-hyperlegible",
-  subsets: ["latin"],
-});
-
-// Monospace font, used for the debug panel (every character the same width).
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
@@ -51,10 +45,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${hyperlegible.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${hyperlegible.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>
   );

@@ -11,6 +11,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { TimeLimit } from "@/lib/game/config";
+import { displayEnd, displayStart } from "@/lib/game/display";
 import type { GameOverReason, LetterPair } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
 import { SHAKE_DURATION, SHAKE_X } from "./shake";
@@ -77,7 +78,7 @@ export function GameOver({
       {/* Words that would have worked for the last pair */}
       {exampleWords.length > 0 && (
         <p className="text-zinc-600 dark:text-zinc-400">
-          For <strong>{pair.start.toUpperCase()}</strong> … <strong>{pair.end}</strong> you could have tried:{" "}
+          For <strong>{displayStart(pair)}</strong> … <strong>{displayEnd(pair)}</strong> you could have tried:{" "}
           {exampleWords.map((word, i) => (
             <span key={word}>
               {i > 0 && " or "}
