@@ -25,6 +25,9 @@ export const TIME_LIMITS = [10, 5, 3] as const;
 /** A TypeScript type meaning "one of the numbers in TIME_LIMITS". */
 export type TimeLimit = (typeof TIME_LIMITS)[number];
 
+/** How many scores each time limit's high score board keeps. */
+export const HIGH_SCORE_LIMIT = 5;
+
 /** How many example words to show on the game-over screen. */
 export const EXAMPLE_WORD_COUNT = 2;
 

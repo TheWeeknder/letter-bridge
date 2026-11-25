@@ -14,37 +14,44 @@
 // it uses React hooks and downloads the word lists with fetch().
 // =============================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnswerInput } from "@/components/AnswerInput";
 import { CountdownBar } from "@/components/CountdownBar";
 import { GameOver } from "@/components/GameOver";
 import { LetterPair } from "@/components/LetterPair";
 import { StreakCounter } from "@/components/StreakCounter";
 import { TimeLimitPicker } from "@/components/TimeLimitPicker";
-import { useBestStreak } from "@/hooks/useBestStreak";
 import { useGame } from "@/hooks/useGame";
+import { useHighScores } from "@/hooks/useHighScores";
 import { useWordData } from "@/hooks/useWordData";
 import { APP_NAME } from "@/lib/brand";
-import type { TimeLimit } from "@/lib/game/config";
-import { isNewBest } from "@/lib/game/bestStreak";
+import { TIME_LIMITS, type TimeLimit } from "@/lib/game/config";
+import { type HighScoreEntry, bestFor, insertScore, rankFor } from "@/lib/game/highScores";
 import { explainWarning } from "@/lib/game/validator";
 
 export default function Home() {
   const { data, loading, error } = useWordData();
   const { state, secondsLeft, start, submit, restart, exampleWords } = useGame(data);
-  const { best, record } = useBestStreak();
+  const { boards, save } = useHighScores();
 
-  // --- Best streak -----------------------------------------------------------
-  // The record as it was when this game STARTED. We need it because the saved
-  // record changes the moment the game ends, and "New best!" compares against
-  // the OLD record.
-  const [bestBeforeGame, setBestBeforeGame] = useState(0);
+  // --- High scores -----------------------------------------------------------
+  // This time limit's board as it was when the game STARTED. The saved board
+  // changes the moment the game ends, but the rank ("New high score! #2") and
+  // the board on the game-over screen are worked out from the OLD one, so
+  // they're right on the very first render.
+  const [boardBeforeGame, setBoardBeforeGame] = useState<HighScoreEntry[]>([]);
 
-  /** Start a game, remembering the record from before it. */
+  /** Start a game, remembering the board from before it. */
   function startGame(timeLimit: TimeLimit) {
-    setBestBeforeGame(best);
+    setBoardBeforeGame(boards[timeLimit]);
     start(timeLimit);
   }
+
+  // Only meaningful once the game is over: this game's place on the board
+  // (or null) and the board including it.
+  const rank = rankFor(boardBeforeGame, state.streak);
+  const shownBoard =
+    rank === null ? boardBeforeGame : insertScore(boardBeforeGame, { streak: state.streak, words: state.usedWords });
 
   // The game-over screen's "Play again" reuses the last time limit. It only
   // renders when timeLimit is set, so the fallback never actually runs.
@@ -53,12 +60,23 @@ export default function Home() {
     if (lastTimeLimit) startGame(lastTimeLimit);
   }
 
-  // When a game ends (by a wrong answer OR the timer), save the streak if it
-  // beats the record. An effect is the one place that sees both ways a game
-  // can end.
+  // When a game ends (by a wrong answer OR the timer), save it if it made the
+  // board. An effect is the one place that sees both ways a game can end.
+  // The ref remembers which game (roundId) was already handled, so a game is
+  // never added twice, e.g. when React runs the effect again.
+  const handledRoundRef = useRef<number | null>(null);
   useEffect(() => {
-    if (state.phase === "over") record(state.streak);
-  }, [state.phase, state.streak, record]);
+    if (state.phase !== "over" || !state.timeLimit) return;
+    if (handledRoundRef.current === state.roundId) return;
+    handledRoundRef.current = state.roundId;
+    if (rankFor(boardBeforeGame, state.streak) === null) return; // didn't make the board
+    save(state.timeLimit, { streak: state.streak, words: state.usedWords });
+  }, [state.phase, state.roundId, state.timeLimit, state.streak, state.usedWords, boardBeforeGame, save]);
+
+  // Setup screen: the best streak for each time limit that has one.
+  const bestPerMode = TIME_LIMITS.filter((limit) => bestFor(boards, limit) > 0)
+    .map((limit) => `${limit}s: ${bestFor(boards, limit)}`)
+    .join(" · ");
 
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 p-6">
@@ -78,14 +96,14 @@ export default function Home() {
           </p>
           <p className="font-bold">Seconds per word:</p>
           <TimeLimitPicker onPick={startGame} selected={state.timeLimit} />
-          {best > 0 && <p className="text-sm text-zinc-500 tabular-nums">Your best streak: {best}</p>}
+          {bestPerMode && <p className="text-sm text-zinc-500 tabular-nums">Best — {bestPerMode}</p>}
         </section>
       )}
 
       {/* --- Playing --- */}
       {data && state.phase === "playing" && state.pair && state.timeLimit && (
         <section className="flex w-full flex-col items-center gap-6">
-          <StreakCounter streak={state.streak} best={best} />
+          <StreakCounter streak={state.streak} best={bestFor(boards, state.timeLimit)} />
           <LetterPair pair={state.pair} />
           <div className="flex w-full flex-col items-center gap-1">
             <CountdownBar
@@ -110,8 +128,8 @@ export default function Home() {
       {data && state.phase === "over" && state.pair && state.gameOverReason && state.timeLimit && (
         <GameOver
           streak={state.streak}
-          best={Math.max(best, state.streak)}
-          isNewBest={isNewBest(state.streak, bestBeforeGame)}
+          board={shownBoard}
+          rank={rank}
           reason={state.gameOverReason}
           lastInput={state.lastInput}
           pair={state.pair}

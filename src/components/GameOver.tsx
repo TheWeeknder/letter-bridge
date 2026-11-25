@@ -6,20 +6,22 @@
 // ANIMATIONS (skipped if the player turned on "reduce motion"):
 // - The reason sentence SHAKES side to side for wrong answers, like a head
 //   shaking "no". Timeouts don't shake: you didn't type anything wrong.
-// - "New best!" pops in when you beat your record.
+// - "New best!" / "New high score! #3" pops in when the game made the board.
 // =============================================================================
 
 import { motion, useReducedMotion } from "motion/react";
 import type { TimeLimit } from "@/lib/game/config";
 import { displayEnd, displayStart } from "@/lib/game/display";
+import type { HighScoreEntry } from "@/lib/game/highScores";
 import type { GameOverReason, LetterPair } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
+import { HighScoreBoard } from "./HighScoreBoard";
 import { SHAKE_DURATION, SHAKE_X } from "./shake";
 
 export interface GameOverProps {
   streak: number;
-  best: number; // the record, already including this game
-  isNewBest: boolean; // did this game beat the previous record?
+  board: HighScoreEntry[]; // this time limit's board, already including this game
+  rank: number | null; // this game's place on the board (1 = new best), or null
   reason: GameOverReason;
   lastInput: string | null;
   pair: LetterPair;
@@ -31,8 +33,8 @@ export interface GameOverProps {
 
 export function GameOver({
   streak,
-  best,
-  isNewBest,
+  board,
+  rank,
   reason,
   lastInput,
   pair,
@@ -52,17 +54,19 @@ export function GameOver({
       <div>
         <div className="text-xs tracking-wide text-zinc-500 uppercase">Final streak</div>
         <div className="text-6xl font-bold tabular-nums">{streak}</div>
-        {isNewBest ? (
+        {rank !== null ? (
           <motion.div
             className="mt-1 font-bold text-emerald-600 dark:text-emerald-400"
             initial={reduceMotion ? false : { scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.2 }}
           >
-            New best!
+            {rank === 1 ? "New best!" : `New high score! #${rank}`}
           </motion.div>
         ) : (
-          <div className="mt-1 text-sm text-zinc-500 tabular-nums">Best: {best}</div>
+          <div className="mt-1 text-sm text-zinc-500 tabular-nums">
+            Best: {Math.max(board[0]?.streak ?? 0, streak)}
+          </div>
         )}
       </div>
 
@@ -74,6 +78,8 @@ export function GameOver({
       >
         {explainGameOver(reason, lastInput, pair)}
       </motion.p>
+
+      <HighScoreBoard board={board} timeLimit={timeLimit} highlightIndex={rank === null ? null : rank - 1} />
 
       {/* Words that would have worked for the last pair */}
       {exampleWords.length > 0 && (

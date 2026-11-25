@@ -18,7 +18,7 @@ Every correct word adds 1 to your streak and brings a new pair of letters. The g
 
 If you type a word that's **too short** (under 3 letters) or one you **already used** in this streak, the game doesn't end. The box shakes and you can try again, but the clock keeps running.
 
-When the game ends you see why, plus a couple of words that would have worked. Your best streak is saved in your browser.
+When the game ends you see why, plus a couple of words that would have worked. Your top 5 streaks for each time limit (with the words you used) are saved in your browser as high scores.
 
 ## Running it
 
@@ -85,7 +85,7 @@ src/
     timer.ts             countdown math
   lib/browser/         download the word lists in the browser (once, cached)
   lib/node/            read the same lists from disk (for tests and scripts)
-  hooks/               React glue: useGame, useCountdown, useWordData, useBestStreak
+  hooks/               React glue: useGame, useCountdown, useWordData, useHighScores
   components/          what you see: letters, timer bar, answer box, game over
   app/                 Next.js pages, plus the app icon and install manifest
 tests/                 Vitest unit tests (mostly for lib/game)

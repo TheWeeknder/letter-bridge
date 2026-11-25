@@ -16,7 +16,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 export interface StreakCounterProps {
   streak: number;
-  best: number; // saved record from earlier games
+  best: number; // best saved streak for this time limit
 }
 
 export function StreakCounter({ streak, best }: StreakCounterProps) {
