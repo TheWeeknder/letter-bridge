@@ -13,13 +13,14 @@ function play(state: GameState, ...actions: GameAction[]): GameState {
   return actions.reduce(gameReducer, state);
 }
 
-const started = play(initialGameState, { type: "START", timeLimit: 5, pair: AE });
+const started = play(initialGameState, { type: "START", timeLimit: 5, seed: "s", pair: AE });
 
 describe("START", () => {
   it("moves from setup to playing with a fresh game", () => {
     expect(started).toMatchObject({
       phase: "playing",
       timeLimit: 5,
+      seed: "s",
       pair: AE,
       streak: 0,
       usedWords: [],
@@ -33,7 +34,7 @@ describe("START", () => {
   });
 
   it("is ignored while already playing", () => {
-    expect(gameReducer(started, { type: "START", timeLimit: 3, pair: TS })).toBe(started);
+    expect(gameReducer(started, { type: "START", timeLimit: 3, seed: "s", pair: TS })).toBe(started);
   });
 });
 
@@ -108,7 +109,7 @@ describe("restarting", () => {
   );
 
   it("START from game over begins a new game with streak 0 and no used words", () => {
-    const again = gameReducer(over, { type: "START", timeLimit: 5, pair: BK });
+    const again = gameReducer(over, { type: "START", timeLimit: 5, seed: "s", pair: BK });
     expect(again).toMatchObject({ phase: "playing", streak: 0, usedWords: [], pair: BK, gameOverReason: null });
     expect(again.roundId).toBeGreaterThan(over.roundId);
   });
@@ -119,7 +120,7 @@ describe("restarting", () => {
   });
 
   it("a word used in a previous game can be used again (new streak)", () => {
-    const again = gameReducer(over, { type: "START", timeLimit: 5, pair: AE });
+    const again = gameReducer(over, { type: "START", timeLimit: 5, seed: "s", pair: AE });
     expect(again.usedWords).not.toContain("astute");
   });
 });
@@ -166,11 +167,23 @@ describe("WARN (too short or already used: try again)", () => {
 
   it("clears the warning when a new game starts", () => {
     const over = gameReducer(repeated, { type: "FAIL", reason: "TIMEOUT" });
-    const again = gameReducer(over, { type: "START", timeLimit: 5, pair: AE });
+    const again = gameReducer(over, { type: "START", timeLimit: 5, seed: "s", pair: AE });
     expect(again.warning).toBeNull();
   });
 
   it("is ignored when not playing", () => {
     expect(gameReducer(initialGameState, { type: "WARN", warning: REPEAT })).toBe(initialGameState);
+  });
+});
+
+describe("RESET (leaving the game, e.g. back to the home page)", () => {
+  it("returns to a fresh setup screen with nothing pre-selected, from any phase", () => {
+    const playing = gameReducer(started, { type: "SUBMIT_CORRECT", word: "astute", nextPair: TS });
+    const over = gameReducer(playing, { type: "FAIL", reason: "TIMEOUT" });
+    for (const state of [playing, over]) {
+      const reset = gameReducer(state, { type: "RESET" });
+      expect(reset).toEqual({ ...initialGameState, roundId: state.roundId });
+      expect(reset.timeLimit).toBeNull();
+    }
   });
 });

@@ -14,11 +14,16 @@
     "lint": "eslint",
     "test": "node scripts/run-tests.mjs run",
     "test:watch": "node scripts/run-tests.mjs",
-    "stats": "tsx scripts/stats.ts"
+    "stats": "tsx scripts/stats.ts",
+    "party:dev": "wrangler dev",
+    "party:deploy": "wrangler deploy",
+    "party:types": "wrangler types party/worker-configuration.d.ts",
+    "party:check": "tsc -p party/tsconfig.json"
   },
   "dependencies": {
     "motion": "^14.14.0",
     "next": "16.4.6",
+    "partysocket": "^1.3.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -30,12 +35,14 @@
     "autoprefixer": "^10.7.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "partyserver": "^0.5.10",
     "postcss": "^8.5.33",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vite": "^8.3.8",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.1",
+    "wrangler": "^4.168.0"
   },
   "overrides": {
     "typescript-eslint": "8.73.0"

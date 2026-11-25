@@ -16,7 +16,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 export interface StreakCounterProps {
   streak: number;
-  best: number; // best saved streak for this time limit
+  best?: number; // best saved streak for this time limit (left out = no "Best" line)
 }
 
 export function StreakCounter({ streak, best }: StreakCounterProps) {
@@ -36,7 +36,7 @@ export function StreakCounter({ streak, best }: StreakCounterProps) {
       >
         {streak}
       </motion.div>
-      <div className="text-sm text-zinc-500 tabular-nums">Best: {Math.max(best, streak)}</div>
+      {best !== undefined && <div className="text-sm text-zinc-500 tabular-nums">Best: {Math.max(best, streak)}</div>}
     </div>
   );
 }

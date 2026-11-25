@@ -10,7 +10,9 @@ Every correct word adds 1 to your streak and brings a new pair of letters. The g
 
 ## How to play
 
-1. Pick how many seconds you get per word: **10**, **5** or **3**.
+The landing page has two buttons: **Play solo** and **Play with friends**.
+
+1. Choose **Play solo**, then pick how many seconds you get per word: **10**, **5** or **3**.
 2. Type a word that **starts** with the first letter and **ends** with the second, then press Enter.
 3. Keep going as long as you can. The game ends when:
    - the word isn't in the dictionary or has the wrong first or last letter, or
@@ -19,6 +21,14 @@ Every correct word adds 1 to your streak and brings a new pair of letters. The g
 If you type a word that's **too short** (under 3 letters) or one you **already used** in this streak, the game doesn't end. The box shakes and you can try again, but the clock keeps running.
 
 When the game ends you see why, plus a couple of words that would have worked. Your top 5 streaks for each time limit (with the words you used) are saved in your browser as high scores.
+
+### Playing with friends
+
+Choose **Play with friends**, then **Create a room**, and share the 5-letter code or invite link with up to 3 friends. They choose **Play with friends** too and type the code under **Have a code?** (or just open the link), then pick a nickname. The first player in the room is the host: they choose the seconds per word and press **Start game**.
+
+Everyone then gets the **same letter pairs in the same order** and plays their own streak on their own timer, with the others' streaks shown live above the letters. The usual rules apply: a wrong word or running out of time knocks you out, and too-short or repeated words are only warnings. When everyone is out, the **highest streak wins** (on a tie, whoever lasted longer). The host can then start a **rematch**.
+
+Answers are checked twice: instantly in your browser, and again by the room server with the same rules and dictionary. The server's verdict is final, so editing the page can't fake a streak.
 
 ## Running it
 
@@ -41,6 +51,23 @@ npm run dev      # start the game at http://localhost:3000
 | `npm run stats` | Print word-list numbers: dictionary size, letter pairs, and so on |
 | `npm run dict:fetch` | Re-download the SCOWL word additions (see [The dictionary](#the-dictionary)) |
 | `npm run clean` | Delete the `.next` build cache. Use it if `npm run dev` shows strange "module not found" errors. |
+| `npm run party:dev` | Start the multiplayer room server locally on port 8787 (run it next to `npm run dev`) |
+| `npm run party:check` | Type-check the room server |
+| `npm run party:types` | Regenerate the room server's Cloudflare types (after changing `wrangler.jsonc`) |
+| `npm run party:deploy` | Deploy the room server to Cloudflare (needs your own Cloudflare account) |
+
+### Running multiplayer locally
+
+Multiplayer rooms run on a small separate server, so you need **two terminals**:
+
+```bash
+npm run dev         # the game, at http://localhost:3000
+npm run party:dev   # the room server, at localhost:8787
+```
+
+Open two browser windows (one of them private/incognito, so each gets its own nickname), create a room in one and join it from the other. No Cloudflare account is needed for local play.
+
+To put rooms online: run `npm run party:deploy` (it asks you to log in to Cloudflare), then set `NEXT_PUBLIC_PARTY_HOST` to the address it prints (e.g. `letter-bridge-rooms.<you>.workers.dev`) in your Vercel project settings and redeploy.
 
 ## Playing on a phone
 
@@ -82,22 +109,27 @@ src/
     letterPicker.ts      choose a fair random letter pair
     validator.ts         accept or reject an answer, and say why
     gameReducer.ts       the game's state machine (setup -> playing -> over)
+    random.ts            seeded random numbers: same seed = same letter pairs
     timer.ts             countdown math
+  lib/multiplayer/     ROOM RULES, also plain TypeScript (shared with the room server)
+    room.ts              the room's state machine (lobby, answers, timeouts, results, rematch)
+    protocol.ts          the messages the browser and room server exchange
   lib/browser/         download the word lists in the browser (once, cached)
   lib/node/            read the same lists from disk (for tests and scripts)
-  hooks/               React glue: useGame, useCountdown, useWordData, useHighScores
-  components/          what you see: letters, timer bar, answer box, game over
-  app/                 Next.js pages, plus the app icon and install manifest
-tests/                 Vitest unit tests (mostly for lib/game)
+  hooks/               React glue: useGame, useCountdown, useWordData, useHighScores, useRoom
+  components/          what you see: letters, timer bar, answer box, game over, room lobby
+  app/                 Next.js pages: / (landing), /solo, /friends, /room/<code>; plus icons and manifest
+party/                 the multiplayer room server (Cloudflare Durable Object via PartyServer)
+tests/                 Vitest unit tests (lib/game and lib/multiplayer)
 ```
 
 The most important design choice is that **the rules in `src/lib/game` know nothing about React or the browser**. Two things follow from that:
 - They can be tested with plain function calls.
-- They can later run on a server unchanged, for example to judge answers in a multiplayer mode.
+- They run on the room server unchanged: `party/server.ts` imports the same `lib/game` and `lib/multiplayer` code the browser uses.
 
 ## Tech
 
-[Next.js](https://nextjs.org) (App Router) · React · TypeScript · [Tailwind CSS](https://tailwindcss.com) · [Motion](https://motion.dev) for animations · [Vitest](https://vitest.dev) for tests · font: [Atkinson Hyperlegible Next](https://www.brailleinstitute.org/freefont/), so a capital "I" and a lowercase "l" never look alike.
+[Next.js](https://nextjs.org) (App Router) · React · TypeScript · [Tailwind CSS](https://tailwindcss.com) · [Motion](https://motion.dev) for animations · [PartyServer](https://github.com/cloudflare/partykit/tree/main/packages/partyserver) on Cloudflare Durable Objects for multiplayer rooms · [Vitest](https://vitest.dev) for tests · font: [Atkinson Hyperlegible Next](https://www.brailleinstitute.org/freefont/), so a capital "I" and a lowercase "l" never look alike.
 
 ## License
 

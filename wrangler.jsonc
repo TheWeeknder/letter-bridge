@@ -1,0 +1,14 @@
+// Cloudflare config for the multiplayer room server (party/server.ts).
+// Local: `npm run party:dev`. Deploy (needs your Cloudflare account): `npm run party:deploy`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "letter-bridge-rooms",
+  "main": "party/server.ts",
+  "compatibility_date": "2026-11-01",
+  "durable_objects": {
+    // One Durable Object per room code. partysocket connects to it as the
+    // "letter-room" party (the kebab-case version of this binding name).
+    "bindings": [{ "name": "LetterRoom", "class_name": "LetterRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LetterRoom"] }]
+}

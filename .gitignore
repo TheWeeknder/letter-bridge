@@ -42,3 +42,6 @@ next-env.d.ts
 
 # word lists copied from /data at dev/build time
 /public/data/
+
+# wrangler (local room server state and build output)
+/.wrangler/

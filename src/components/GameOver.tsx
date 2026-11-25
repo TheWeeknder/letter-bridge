@@ -2,7 +2,7 @@
 // =============================================================================
 // GameOver — why the game ended, the final streak, the high score board,
 // example words, and two ways to continue: play again with the same time, or
-// go back home to choose a different time.
+// go back home (to pick a different time or play with friends).
 //
 // ANIMATIONS (skipped if the player turned on "reduce motion"):
 // - The reason sentence SHAKES side to side for wrong answers, like a head
@@ -29,7 +29,7 @@ export interface GameOverProps {
   timeLimit: TimeLimit;
   exampleWords: string[];
   onPlayAgain: () => void; // same time limit, start immediately
-  onChangeTime: () => void; // back to the time-limit screen
+  onHome: () => void; // back to the landing page
 }
 
 export function GameOver({
@@ -42,7 +42,7 @@ export function GameOver({
   timeLimit,
   exampleWords,
   onPlayAgain,
-  onChangeTime,
+  onHome,
 }: GameOverProps) {
   const reduceMotion = useReducedMotion();
   const shouldShake = !reduceMotion && reason !== "TIMEOUT";
@@ -104,7 +104,7 @@ export function GameOver({
       {/* 5. What next? Stacked full-width buttons are easy to tap on a phone. */}
       <div className="flex w-full max-w-xs flex-col gap-3">
         <Button onClick={onPlayAgain}>Play again ({timeLimit}s)</Button>
-        <Button variant="secondary" onClick={onChangeTime}>
+        <Button variant="secondary" onClick={onHome}>
           Home
         </Button>
       </div>

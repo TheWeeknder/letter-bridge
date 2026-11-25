@@ -67,6 +67,7 @@ export type GamePhase = "setup" | "playing" | "over";
 export interface GameState {
   phase: GamePhase;
   timeLimit: TimeLimit | null;
+  seed: string | null; // decides this game's sequence of pairs (see random.ts)
   pair: LetterPair | null;
   streak: number;
   usedWords: string[]; // words accepted in the current streak
@@ -80,8 +81,9 @@ export interface GameState {
 
 /** Everything that can happen in the game. */
 export type GameAction =
-  | { type: "START"; timeLimit: TimeLimit; pair: LetterPair }
+  | { type: "START"; timeLimit: TimeLimit; seed: string; pair: LetterPair }
   | { type: "SUBMIT_CORRECT"; word: string; nextPair: LetterPair }
   | { type: "WARN"; warning: Warning }
   | { type: "FAIL"; reason: GameOverReason; input?: string }
-  | { type: "RESTART" };
+  | { type: "RESTART" }
+  | { type: "RESET" };

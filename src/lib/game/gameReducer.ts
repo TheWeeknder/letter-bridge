@@ -8,12 +8,13 @@
 // WHY: that makes the whole game flow testable with plain function calls:
 //   state = gameReducer(state, { type: "START", ... })
 //   expect(state.phase).toBe("playing")
-// Anything random (the next letter pair) is decided OUTSIDE and passed in
-// inside the action.
+// Anything random (the seed and the next letter pair) is decided OUTSIDE and
+// passed in inside the action.
 //
 // Phases:  setup --START--> playing --FAIL--> over --START--> playing
 //                             ^   |             |
 //                             +---+             +--RESTART--> setup
+//                                                (RESET from anywhere -> setup)
 //                        SUBMIT_CORRECT
 //                   (streak + 1, new pair)
 //                           WARN
@@ -31,6 +32,7 @@ import type { GameAction, GameState } from "./types";
 export const initialGameState: GameState = {
   phase: "setup",
   timeLimit: null,
+  seed: null,
   pair: null,
   streak: 0,
   usedWords: [],
@@ -50,6 +52,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         phase: "playing",
         timeLimit: action.timeLimit,
+        seed: action.seed,
         pair: action.pair,
         streak: 0,
         usedWords: [],
@@ -107,6 +110,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Keep the last time limit so it's pre-selected next time;
       // everything else goes back to the starting values.
       return { ...initialGameState, timeLimit: state.timeLimit, roundId: state.roundId };
+    }
+
+    // --- Leave the game completely (e.g. the player went back home) ---------
+    case "RESET": {
+      // Like a fresh visit: nothing pre-selected. roundId keeps counting up so
+      // React never mistakes a new round for an old one.
+      return { ...initialGameState, roundId: state.roundId };
     }
   }
 }
