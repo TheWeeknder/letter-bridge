@@ -13,6 +13,7 @@ import { motion, useReducedMotion } from "motion/react";
 import type { TimeLimit } from "@/lib/game/config";
 import type { GameOverReason, LetterPair } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
+import { SHAKE_DURATION, SHAKE_X } from "./shake";
 
 export interface GameOverProps {
   streak: number;
@@ -26,10 +27,6 @@ export interface GameOverProps {
   onPlayAgain: () => void; // same time limit, start immediately
   onChangeTime: () => void; // back to the time-limit screen
 }
-
-// Shake keyframes: move left/right by a few pixels, getting smaller, then
-// stop in the middle. Motion plays the list in order.
-const SHAKE_X = [0, -10, 10, -8, 8, -4, 4, 0];
 
 export function GameOver({
   streak,
@@ -72,7 +69,7 @@ export function GameOver({
       <motion.p
         className="text-lg text-red-600 dark:text-red-400"
         animate={shouldShake ? { x: SHAKE_X } : undefined}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: SHAKE_DURATION }}
       >
         {explainGameOver(reason, lastInput, pair)}
       </motion.p>

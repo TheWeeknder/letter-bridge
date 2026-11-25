@@ -61,11 +61,15 @@ export interface GameState {
   roundId: number; // goes up every round so the timer knows to restart
   gameOverReason: GameOverReason | null;
   lastInput: string | null; // what the player typed when they lost (if anything)
+  // A repeated word doesn't end the game; the player just tries again.
+  repeatedWord: string | null; // the word they repeated this round (shown as a warning)
+  repeatCount: number; // goes up on every repeat, so the input shakes EVERY time
 }
 
 /** Everything that can happen in the game. */
 export type GameAction =
   | { type: "START"; timeLimit: TimeLimit; pair: LetterPair }
   | { type: "SUBMIT_CORRECT"; word: string; nextPair: LetterPair }
+  | { type: "REPEAT_WORD"; word: string }
   | { type: "FAIL"; reason: GameOverReason; input?: string }
   | { type: "RESTART" };

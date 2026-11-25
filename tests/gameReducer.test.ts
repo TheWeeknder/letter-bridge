@@ -123,3 +123,41 @@ describe("restarting", () => {
     expect(again.usedWords).not.toContain("astute");
   });
 });
+
+describe("REPEAT_WORD (typing a word already used this streak)", () => {
+  const afterOne = gameReducer(started, { type: "SUBMIT_CORRECT", word: "astute", nextPair: TS });
+  const repeated = gameReducer(afterOne, { type: "REPEAT_WORD", word: "astute" });
+
+  it("does NOT end the game: same phase, pair and streak", () => {
+    expect(repeated).toMatchObject({ phase: "playing", pair: TS, streak: 1, usedWords: ["astute"] });
+  });
+
+  it("keeps the same roundId, so the timer keeps running (no free time)", () => {
+    expect(repeated.roundId).toBe(afterOne.roundId);
+  });
+
+  it("remembers the word for the warning and counts the repeat", () => {
+    expect(repeated.repeatedWord).toBe("astute");
+    expect(repeated.repeatCount).toBe(afterOne.repeatCount + 1);
+  });
+
+  it("counts up again for the same word twice, so the box shakes again", () => {
+    const twice = gameReducer(repeated, { type: "REPEAT_WORD", word: "astute" });
+    expect(twice.repeatCount).toBe(repeated.repeatCount + 1);
+  });
+
+  it("clears the warning on the next correct answer", () => {
+    const next = gameReducer(repeated, { type: "SUBMIT_CORRECT", word: "tests", nextPair: BK });
+    expect(next.repeatedWord).toBeNull();
+  });
+
+  it("clears the warning when a new game starts", () => {
+    const over = gameReducer(repeated, { type: "FAIL", reason: "TIMEOUT" });
+    const again = gameReducer(over, { type: "START", timeLimit: 5, pair: AE });
+    expect(again.repeatedWord).toBeNull();
+  });
+
+  it("is ignored when not playing", () => {
+    expect(gameReducer(initialGameState, { type: "REPEAT_WORD", word: "astute" })).toBe(initialGameState);
+  });
+});

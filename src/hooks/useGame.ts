@@ -16,6 +16,7 @@ import type { TimeLimit } from "@/lib/game/config";
 import { getExampleWords } from "@/lib/game/examples";
 import { gameReducer, initialGameState } from "@/lib/game/gameReducer";
 import { pickLetterPair } from "@/lib/game/letterPicker";
+import { normalizeWord } from "@/lib/game/normalize";
 import type { GameState, WordData } from "@/lib/game/types";
 import { validateAnswer } from "@/lib/game/validator";
 import { useCountdown } from "./useCountdown";
@@ -70,6 +71,10 @@ export function useGame(data: WordData | null): UseGameResult {
       // Pick the next pair HERE (randomness stays out of the reducer).
       const nextPair = pickLetterPair(data.eligiblePairs, Math.random, state.pair);
       dispatch({ type: "SUBMIT_CORRECT", word: result.word, nextPair });
+    } else if (result.reason === "ALREADY_USED") {
+      // A repeat is an honest slip, not a wrong word: warn and let the player
+      // try again on the same pair (the clock keeps running).
+      dispatch({ type: "REPEAT_WORD", word: normalizeWord(input) });
     } else {
       dispatch({ type: "FAIL", reason: result.reason, input });
     }

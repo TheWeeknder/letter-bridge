@@ -88,7 +88,14 @@ export default function Home() {
             <span className="text-sm text-zinc-500 tabular-nums">{secondsLeft.toFixed(1)}s</span>
           </div>
           {/* key={roundId}: a fresh, empty, focused input for every new pair */}
-          <AnswerInput key={state.roundId} onSubmit={submit} />
+          <AnswerInput
+            key={state.roundId}
+            onSubmit={submit}
+            warning={
+              state.repeatedWord ? `You already used '${state.repeatedWord}'. Try another word!` : null
+            }
+            shakeKey={state.repeatCount}
+          />
         </section>
       )}
 

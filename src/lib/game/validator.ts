@@ -16,6 +16,9 @@
 //   6. ALREADY_USED accepted earlier in this streak
 // Order matters when an answer breaks several rules at once: "xyz" for A…e
 // is reported as WRONG_START, the most helpful thing to fix first.
+// The validator only REPORTS the reason. What happens next is the game's
+// choice: ALREADY_USED lets the player try again (see useGame), while every
+// other reason ends the game.
 // Timeouts are NOT handled here. The validator only judges typed answers;
 // the game loop (step e) handles the clock.
 // =============================================================================
