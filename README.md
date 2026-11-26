@@ -6,7 +6,7 @@ A fast word game. You get a **start letter** and an **end letter**, and you have
    A   …   e        ->   "astute" ✓   "able" ✓   "aeioue" ✗ (not a word)
 ```
 
-Every correct word adds 1 to your score and brings a new pair of letters. There are two modes: **Streak** (a timer per word, one mistake ends it) and **Sprint** (30 seconds, as many words as you can). The game works in any modern browser and can be installed on a phone like an app.
+Every correct word scores **one point per letter** ("soaps" = 5, "superheroes" = 11) and brings a new pair of letters, so longer words are worth more. There are two modes: **Streak** (a timer per word, one mistake ends it) and **Sprint** (30 seconds, as many words as you can). The game works in any modern browser and can be installed on a phone like an app.
 
 ## How to play
 
@@ -23,19 +23,19 @@ If you type a word that's **too short** (under 3 letters) or one you **already u
 
 **Sprint: 30 seconds.** One clock for the whole game: find as many words as you can before it runs out. Mistakes never end a sprint. A wrong letter, a word that isn't in the dictionary, a too-short or a repeated word only shakes the box and tells you why. You stay on the same letters until you find a word, so a mistake just costs time.
 
-When the game ends you see your score, plus a couple of words that would have worked. Your top 5 scores for each mode (with the words you used) are saved in your browser as high scores.
+When the game ends you see your points, how many words you found and your longest one, plus a couple of words that would have worked. Your top 5 scores (by points) for each mode, with the words you used, are saved in your browser as high scores.
 
 ### Playing with friends
 
 Choose **Play with friends**, then **Create a room**, and share the 5-letter code or invite link with up to 3 friends. They choose **Play with friends** too and type the code under **Have a code?**, open the link, or **scan the QR code** in the waiting room with their phone camera, then pick a nickname. The first player in the room is the host: they choose the mode (Streak 10s/5s/3s or the 30-second Sprint) and press **Start game**.
 
 Everyone then gets the **same letter pairs in the same order** and plays their own game, with the others' scores shown live above the letters.
-- **Streak:** each player has their own timer. A wrong word or running out of time knocks you out; too-short or repeated words are only warnings. When everyone is out, the **highest streak wins** (on a tie, whoever lasted longer).
-- **Sprint:** one 30-second clock for everyone, and mistakes only warn. When time is up, **the most words wins**. Equal counts share the place ("It's a tie!").
+- **Streak:** each player has their own timer. A wrong word or running out of time knocks you out; too-short or repeated words are only warnings. When everyone is out, the **most points wins** (on equal points, whoever lasted longer).
+- **Sprint:** one 30-second clock for everyone, and mistakes only warn. When time is up, **the most points wins**. Equal points share the place ("It's a tie!"). Because longer words score more, finding the same number of words is rarely a tie.
 
 The host can then start a **rematch**.
 
-Answers are checked twice: instantly in your browser, and again by the room server with the same rules and dictionary. The server's verdict is final, so editing the page can't fake a streak.
+Answers are checked twice: instantly in your browser, and again by the room server with the same rules and dictionary. The server's verdict is final, so editing the page can't fake a score.
 
 ## Running it
 
@@ -131,6 +131,7 @@ src/
   lib/game/            THE GAME RULES. Plain TypeScript, no React, no browser.
     config.ts            every tunable number (time limits, sprint length, min word length, ...)
     modes.ts             the two modes (Streak, Sprint) and the rules that differ between them
+    scoring.ts           points: one per letter of every accepted word
     wordLists.ts         turn .txt files into a dictionary + letter-pair index
     letterPicker.ts      choose a fair random letter pair
     validator.ts         accept or reject an answer, and say why

@@ -10,7 +10,7 @@
 // Solo starts a game the moment you tap; the multiplayer lobby only selects
 // (the host presses Start afterwards). Both use this same component, so the
 // two screens always offer the same choices. Under each section an optional
-// "Best" line shows your saved high scores for that mode.
+// "Best" line shows your saved best points for that mode.
 // =============================================================================
 
 import type { ReactNode } from "react";
@@ -22,7 +22,7 @@ import { CHOICE_KEY, CHOICE_KEY_STATE } from "./ui";
 export interface ModePickerProps {
   onPick: (mode: GameMode) => void;
   selected?: GameMode | null; // highlights the current choice (optional)
-  bests?: Partial<Record<GameMode, number>>; // solo: saved best per mode (0 / missing = no best yet)
+  bests?: Partial<Record<GameMode, number>>; // solo: saved best points per mode (0 / missing = no best yet)
 }
 
 /** One mode's section: a heading, a one-line explanation, its buttons and a best line. */
@@ -40,7 +40,7 @@ function Section({ title, hint, best, children }: { title: string; hint: string;
 }
 
 export function ModePicker({ onPick, selected = null, bests }: ModePickerProps) {
-  // "Best — 10s: 12 · 5s: 7" for the Streak modes that have a score.
+  // "Best points — 10s: 42 · 5s: 30" for the Streak modes that have a score.
   const streakBests = TIME_LIMITS.filter((limit) => (bests?.[limit] ?? 0) > 0)
     .map((limit) => `${limit}s: ${bests?.[limit]}`)
     .join(" · ");
@@ -52,7 +52,7 @@ export function ModePicker({ onPick, selected = null, bests }: ModePickerProps) 
       <Section
         title="Streak"
         hint="Seconds per word, fresh for every word. One wrong word ends it."
-        best={streakBests ? `Best — ${streakBests}` : undefined}
+        best={streakBests ? `Best points — ${streakBests}` : undefined}
       >
         <TimeLimitPicker onPick={onPick} selected={selected === null || isSprint(selected) ? null : selected} />
       </Section>
@@ -62,7 +62,7 @@ export function ModePicker({ onPick, selected = null, bests }: ModePickerProps) 
       <Section
         title="Sprint"
         hint={`${SPRINT_SECONDS} seconds, as many words as you can. Mistakes only warn you.`}
-        best={sprintBest > 0 ? `Best — ${sprintBest} ${sprintBest === 1 ? "word" : "words"}` : undefined}
+        best={sprintBest > 0 ? `Best — ${sprintBest} ${sprintBest === 1 ? "point" : "points"}` : undefined}
       >
         <button
           type="button"

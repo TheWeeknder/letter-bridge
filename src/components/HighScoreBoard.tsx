@@ -3,13 +3,14 @@
 // HighScoreBoard — the top scores for one mode, shown on game over.
 //
 // One quiet bordered card (LIST_CARD in ui.tsx) with a row per score: the
-// place, the streak and the words used (in Sprint the score IS the number of
-// words). The words are cut to one line; each row is a native <details>, so
+// place, the points (one per letter of every word) and the words used. The
+// board is sorted by points, so one long word can beat several short ones.
+// The words are cut to one line; each row is a native <details>, so
 // tapping it (on a phone) or clicking it opens the full list. The row for the
 // game just played gets an emerald bar on its left edge.
 // =============================================================================
 
-import type { HighScoreEntry } from "@/lib/game/highScores";
+import { type HighScoreEntry, entryPoints } from "@/lib/game/highScores";
 import { type GameMode, modeLabel } from "@/lib/game/modes";
 import { LIST_CARD, SectionHeading } from "./ui";
 
@@ -39,16 +40,16 @@ export function HighScoreBoard({ board, mode, highlightIndex }: HighScoreBoardPr
               <details className="group px-3 py-2">
                 <summary className="flex cursor-pointer list-none items-baseline gap-3 [&::-webkit-details-marker]:hidden">
                   <span className="w-5 text-sm text-muted tabular-nums">{i + 1}</span>
-                  <span className={"w-6 tabular-nums " + (highlighted ? "font-bold" : "font-semibold")}>
-                    {entry.streak}
+                  <span className={"w-8 tabular-nums " + (highlighted ? "font-bold" : "font-semibold")}>
+                    {entryPoints(entry)}
                   </span>
                   {/* One line when closed; the full list is shown below when open. */}
                   <span className="min-w-0 flex-1 truncate text-sm text-muted group-open:hidden">
                     {entry.words.join(", ")}
                   </span>
                 </summary>
-                {/* Indent = place (w-5) + streak (w-6) + two gap-3s, so it lines up with the words above. */}
-                <p className="pt-1 pl-17 text-sm break-words text-muted">
+                {/* Indent = place (w-5) + points (w-8) + two gap-3s, so it lines up with the words above. */}
+                <p className="pt-1 pl-19 text-sm break-words text-muted">
                   {entry.words.join(", ")}
                 </p>
               </details>

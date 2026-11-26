@@ -4,8 +4,10 @@
 // example words, and two ways to continue: play again in the same mode, or
 // go back home (to pick a different mode or play with friends).
 //
-// Streak: "Game over" + why (wrong word or time's up) + "Final streak".
-// Sprint: only the clock ends a sprint, so "Time's up!" + "Words found".
+// The big number is the POINTS (one per letter of every accepted word), with
+// the word count and the longest word underneath.
+// Streak: "Game over" + why (wrong word or time's up).
+// Sprint: only the clock ends a sprint, so just "Time's up!".
 //
 // ANIMATIONS (skipped if the player turned on "reduce motion"):
 // - The reason sentence SHAKES side to side for wrong answers, like a head
@@ -14,8 +16,9 @@
 // =============================================================================
 
 import { motion, useReducedMotion } from "motion/react";
-import type { HighScoreEntry } from "@/lib/game/highScores";
-import { type GameMode, isSprint, modeLabel } from "@/lib/game/modes";
+import { type HighScoreEntry, entryPoints } from "@/lib/game/highScores";
+import { type GameMode, isSprint, modeLabel, wordCountLabel } from "@/lib/game/modes";
+import { longestWord, scoreFor } from "@/lib/game/scoring";
 import type { GameOverReason, LetterPair } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
 import { HighScoreBoard } from "./HighScoreBoard";
@@ -23,7 +26,7 @@ import { SHAKE_DURATION, SHAKE_X } from "./shake";
 import { Button, ScreenHeader } from "./ui";
 
 export interface GameOverProps {
-  streak: number;
+  words: string[]; // the words accepted this game (the points come from these)
   board: HighScoreEntry[]; // this mode's board, already including this game
   rank: number | null; // this game's place on the board (1 = new best), or null
   reason: GameOverReason;
@@ -36,7 +39,7 @@ export interface GameOverProps {
 }
 
 export function GameOver({
-  streak,
+  words,
   board,
   rank,
   reason,
@@ -50,6 +53,9 @@ export function GameOver({
   const reduceMotion = useReducedMotion();
   const shouldShake = !reduceMotion && reason !== "TIMEOUT";
   const sprint = isSprint(mode);
+  const points = scoreFor(words);
+  const longest = longestWord(words);
+  const best = Math.max(board[0] ? entryPoints(board[0]) : 0, points);
 
   return (
     <section className="flex w-full flex-col items-center gap-8 text-center">
@@ -72,8 +78,17 @@ export function GameOver({
 
       {/* 2. The score: the one big thing on this screen. */}
       <div className="flex flex-col items-center gap-1">
-        <div className="text-7xl leading-none font-bold tabular-nums">{streak}</div>
-        <div className="text-sm text-muted">{sprint ? "Words found" : "Final streak"}</div>
+        <div className="text-7xl leading-none font-bold tabular-nums">{points}</div>
+        <div className="text-sm text-muted">Points</div>
+        <div className="text-sm text-muted">
+          {wordCountLabel(mode, words.length)}
+          {longest && (
+            <>
+              {" "}
+              · longest: <strong className="text-foreground">{longest}</strong>
+            </>
+          )}
+        </div>
         {rank !== null ? (
           <motion.div
             className="mt-2 font-bold text-accent-text"
@@ -85,7 +100,7 @@ export function GameOver({
           </motion.div>
         ) : (
           <div className="mt-2 text-sm text-muted tabular-nums">
-            Best: {Math.max(board[0]?.streak ?? 0, streak)}
+            Best: {best}
           </div>
         )}
       </div>

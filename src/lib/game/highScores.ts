@@ -1,7 +1,9 @@
 // =============================================================================
 // highScores.ts — pure rules for the high score boards: one top-5 list per
 // game mode (10s, 5s, 3s and the 30s sprint), each entry remembering the
-// score and the words used.
+// words used. A game's score is its POINTS, worked out from those words (one
+// point per letter, see scoring.ts), so boards saved before points existed
+// simply re-score and re-sort themselves when loaded.
 //
 // WHY separate from storage: where scores are kept (localStorage today, maybe
 // a server once multiplayer arrives) is a browser/network detail. The rules
@@ -11,13 +13,19 @@
 
 import { HIGH_SCORE_LIMIT } from "./config";
 import { GAME_MODES, type GameMode } from "./modes";
+import { scoreFor } from "./scoring";
 
 /** One finished game on a board. */
 export interface HighScoreEntry {
-  // The score: the streak in Streak mode, the number of words in Sprint.
-  // (Still called "streak" so scores saved before Sprint existed load fine.)
+  // How many words were accepted. (Called "streak" so old saves load fine.)
+  // The SCORE isn't stored: it's entryPoints(entry), worked out from the words.
   streak: number;
   words: string[]; // the words accepted during that game, in order
+}
+
+/** An entry's score: the points for its words. */
+export function entryPoints(entry: HighScoreEntry): number {
+  return scoreFor(entry.words);
 }
 
 /** Every board, one per game mode. Each is sorted best first. */
@@ -44,11 +52,11 @@ function isValidEntry(value: unknown): value is HighScoreEntry {
 }
 
 /**
- * Sort best first and keep only the top HIGH_SCORE_LIMIT. The sort is stable,
- * so equal streaks keep their order: the OLDER score stays ahead.
+ * Sort by points, best first, and keep only the top HIGH_SCORE_LIMIT. The sort
+ * is stable, so equal points keep their order: the OLDER score stays ahead.
  */
 function tidy(board: HighScoreEntry[]): HighScoreEntry[] {
-  return [...board].sort((a, b) => b.streak - a.streak).slice(0, HIGH_SCORE_LIMIT);
+  return [...board].sort((a, b) => entryPoints(b) - entryPoints(a)).slice(0, HIGH_SCORE_LIMIT);
 }
 
 /**
@@ -82,13 +90,13 @@ export function parseHighScores(raw: string | null): HighScoreBoards {
 }
 
 /**
- * The 1-based place a new `streak` would take on `board`, or null if it
- * doesn't make the board. A streak of 0 never counts. On a tie the older
- * score stays ahead, so matching a score puts you just below it.
+ * The 1-based place a game worth `points` would take on `board`, or null if
+ * it doesn't make the board. 0 points never counts. On a tie the older score
+ * stays ahead, so matching a score puts you just below it.
  */
-export function rankFor(board: HighScoreEntry[], streak: number): number | null {
-  if (streak <= 0) return null;
-  const rank = board.filter((entry) => entry.streak >= streak).length + 1;
+export function rankFor(board: HighScoreEntry[], points: number): number | null {
+  if (points <= 0) return null;
+  const rank = board.filter((entry) => entryPoints(entry) >= points).length + 1;
   return rank <= HIGH_SCORE_LIMIT ? rank : null;
 }
 
@@ -97,7 +105,8 @@ export function insertScore(board: HighScoreEntry[], entry: HighScoreEntry): Hig
   return tidy([...board, entry]);
 }
 
-/** The best score for one mode (0 if its board is empty). */
+/** The best score (points) for one mode (0 if its board is empty). */
 export function bestFor(boards: HighScoreBoards, mode: GameMode): number {
-  return boards[mode][0]?.streak ?? 0;
+  const best = boards[mode][0];
+  return best ? entryPoints(best) : 0;
 }

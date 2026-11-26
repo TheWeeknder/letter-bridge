@@ -8,7 +8,7 @@
 //   loading / error -> waiting for the word lists
 //   "setup"         -> pick a mode: Streak (10s/5s/3s per word) or Sprint (30s)
 //   "playing"       -> score, letters, countdown bar, answer box
-//   "over"          -> final score, reason, high scores, play again / home
+//   "over"          -> final points, reason, high scores, play again / home
 //
 // "use client" = this component runs in the browser, which we need because
 // it uses React hooks and downloads the word lists with fetch().
@@ -26,6 +26,7 @@ import { useHighScores } from "@/hooks/useHighScores";
 import { useWordData } from "@/hooks/useWordData";
 import { type HighScoreEntry, bestFor, insertScore, rankFor } from "@/lib/game/highScores";
 import { GAME_MODES, type GameMode } from "@/lib/game/modes";
+import { scoreFor } from "@/lib/game/scoring";
 
 export default function SoloPage() {
   const router = useRouter();
@@ -54,9 +55,10 @@ export default function SoloPage() {
     start(mode);
   }
 
-  // Only meaningful once the game is over: this game's place on the board
-  // (or null) and the board including it.
-  const rank = rankFor(boardBeforeGame, state.streak);
+  // Only meaningful once the game is over: this game's points, its place on
+  // the board (or null) and the board including it.
+  const points = scoreFor(state.usedWords);
+  const rank = rankFor(boardBeforeGame, points);
   const shownBoard =
     rank === null ? boardBeforeGame : insertScore(boardBeforeGame, { streak: state.streak, words: state.usedWords });
 
@@ -76,7 +78,7 @@ export default function SoloPage() {
     if (state.phase !== "over" || !state.mode) return;
     if (handledRoundRef.current === state.roundId) return;
     handledRoundRef.current = state.roundId;
-    if (rankFor(boardBeforeGame, state.streak) === null) return; // didn't make the board
+    if (rankFor(boardBeforeGame, scoreFor(state.usedWords)) === null) return; // didn't make the board
     save(state.mode, { streak: state.streak, words: state.usedWords });
   }, [state.phase, state.roundId, state.mode, state.streak, state.usedWords, boardBeforeGame, save]);
 
@@ -111,7 +113,7 @@ export default function SoloPage() {
       {/* --- Game over --- */}
       {data && state.phase === "over" && state.pair && state.gameOverReason && state.mode && (
         <GameOver
-          streak={state.streak}
+          words={state.usedWords}
           board={shownBoard}
           rank={rank}
           reason={state.gameOverReason}

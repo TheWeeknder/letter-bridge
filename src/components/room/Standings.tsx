@@ -1,15 +1,16 @@
 "use client";
 // =============================================================================
-// Standings — every player ranked by score, in the same quiet card style as
-// the high score board. Used while you wait for the others to finish, and on
-// the results screen.
+// Standings — every player ranked by points (one per letter of every
+// accepted word), in the same quiet card style as the high score board.
+// Used while you wait for the others to finish, and on the results screen.
 //
 // Ties: in Streak whoever lasted longer ranks higher; in Sprint everyone
-// stops together, so equal word counts share the place (1, 1, 3) and every
+// stops together, so equal points share the place (1, 1, 3) and every
 // winner gets the emerald bar.
 // =============================================================================
 
 import { isSprint } from "@/lib/game/modes";
+import { scoreFor } from "@/lib/game/scoring";
 import { placesFor, rankPlayers, type RoomState } from "@/lib/multiplayer/room";
 import { LIST_CARD, SectionHeading } from "../ui";
 
@@ -46,7 +47,7 @@ export function Standings({ room, myId, title }: { room: RoomState; myId: string
               ) : (
                 !finished && <span className="text-xs text-muted">{sprint ? "done" : "out"}</span>
               )}
-              <span className="w-6 text-right font-bold tabular-nums">{p.streak}</span>
+              <span className="w-8 text-right font-bold tabular-nums">{scoreFor(p.usedWords)}</span>
             </li>
           );
         })}

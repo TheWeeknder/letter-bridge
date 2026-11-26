@@ -45,6 +45,15 @@ export function modeLabel(mode: GameMode): string {
 }
 
 /**
+ * How the number of accepted words is described next to the points:
+ * "Streak 4" in Streak (they were in a row), "4 words" / "1 word" in Sprint.
+ */
+export function wordCountLabel(mode: GameMode, words: number): string {
+  if (isSprint(mode)) return `${words} ${words === 1 ? "word" : "words"}`;
+  return `Streak ${words}`;
+}
+
+/**
  * Does this rejected answer only WARN the player (try again, same letters)
  * instead of ending the game?
  * - Sprint: every mistake just warns. Only the clock ends a sprint.

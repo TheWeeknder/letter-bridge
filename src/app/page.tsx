@@ -30,7 +30,8 @@ export default function Home() {
               Type a word that <strong className="text-foreground">starts</strong> with the first letter and{" "}
               <strong className="text-foreground">ends</strong> with the second, before time runs out. Play a{" "}
               <strong className="text-foreground">streak</strong> or a 30-second{" "}
-              <strong className="text-foreground">sprint</strong>.
+              <strong className="text-foreground">sprint</strong>.{" "}
+              <strong className="text-foreground">Longer words score more points.</strong>
             </>
           }
         />

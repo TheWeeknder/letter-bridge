@@ -17,14 +17,16 @@
 // Every player gets the SAME sequence of letter pairs (from the shared seed)
 // and plays their own game. Two modes (see lib/game/modes.ts):
 //   Streak  "parallel survival": your own timer per word; a wrong answer or
-//           running out of time knocks you out. Highest streak wins.
+//           running out of time knocks you out.
 //   Sprint  one shared clock for everyone; wrong answers only warn, so
-//           everyone plays until time is up. Most words wins; equal counts
-//           share the place.
+//           everyone plays until time is up.
+// In both, the most POINTS wins: one point per letter of every accepted
+// word (see lib/game/scoring.ts), so longer words beat more short ones.
 // =============================================================================
 
 import { type GameMode, isSprint, modeSeconds, warnsInstead } from "../game/modes";
 import { pairForRound } from "../game/random";
+import { scoreFor } from "../game/scoring";
 import type { GameOverReason, LetterPair, WordData } from "../game/types";
 import { validateAnswer } from "../game/validator";
 import { MAX_PLAYERS, MIN_PLAYERS, NICKNAME_MAX_LENGTH, RECONNECT_GRACE_MS, TIMEOUT_GRACE_MS } from "./config";
@@ -128,7 +130,7 @@ export function roundDeadline(player: RoomPlayer, state: Pick<RoomState, "mode" 
 }
 
 /**
- * Players in finishing order, most words first. On equal words:
+ * Players in finishing order, most points first. On equal points:
  * - Streak: whoever lasted longer (still playing beats knocked out; out
  *   later beats out earlier).
  * - Sprint: everyone stops together, so they share the place (see placesFor);
@@ -136,7 +138,8 @@ export function roundDeadline(player: RoomPlayer, state: Pick<RoomState, "mode" 
  */
 export function rankPlayers(players: RoomPlayer[], mode: GameMode | null = null): RoomPlayer[] {
   return [...players].sort((a, b) => {
-    if (b.streak !== a.streak) return b.streak - a.streak;
+    const difference = scoreFor(b.usedWords) - scoreFor(a.usedWords);
+    if (difference !== 0) return difference;
     if (mode !== null && isSprint(mode)) return 0;
     return (b.outAt ?? Infinity) - (a.outAt ?? Infinity);
   });
@@ -144,14 +147,15 @@ export function rankPlayers(players: RoomPlayer[], mode: GameMode | null = null)
 
 /**
  * The place (1, 2, 3…) for each player of an already ranked list. In Sprint,
- * equal word counts share a place (1, 1, 3); in Streak everyone gets their
- * own place, because rankPlayers already broke the tie.
+ * equal points share a place (1, 1, 3); in Streak everyone gets their own
+ * place, because rankPlayers already broke the tie.
  */
 export function placesFor(ranked: RoomPlayer[], mode: GameMode | null): number[] {
   const sharing = mode !== null && isSprint(mode);
   return ranked.map((player, i) => {
     if (!sharing) return i + 1;
-    return ranked.findIndex((p) => p.streak === player.streak) + 1;
+    const points = scoreFor(player.usedWords);
+    return ranked.findIndex((p) => scoreFor(p.usedWords) === points) + 1;
   });
 }
 

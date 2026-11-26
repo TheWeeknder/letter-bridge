@@ -31,6 +31,12 @@ export type TimeLimit = (typeof TIME_LIMITS)[number];
  */
 export const SPRINT_SECONDS = 30;
 
+/**
+ * Points for each letter of an accepted word, so longer words score more
+ * ("soaps" = 5, "superheroes" = 11). See scoring.ts.
+ */
+export const POINTS_PER_LETTER = 1;
+
 /** How many scores each mode's high score board keeps. */
 export const HIGH_SCORE_LIMIT = 5;
 

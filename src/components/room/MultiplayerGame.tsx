@@ -18,12 +18,14 @@
 // The parent renders this with key={seed}, so every new game starts fresh.
 //
 // Screens:  playing -> "You're out" / "Time's up" (others still going) -> results
-// Results: the winner, or "It's a tie!" when a sprint ends with equal counts.
+// Results: the winner (most points: one per letter of every accepted word),
+// or "It's a tie!" when a sprint ends with equal points.
 // =============================================================================
 
 import { useEffect, useState } from "react";
 import { useGame } from "@/hooks/useGame";
-import { isSprint, modeSeconds } from "@/lib/game/modes";
+import { isSprint, modeSeconds, wordCountLabel } from "@/lib/game/modes";
+import { pointsLabel, scoreFor } from "@/lib/game/scoring";
 import type { WordData } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
 import { placesFor, rankPlayers, type RoomState } from "@/lib/multiplayer/room";
@@ -109,7 +111,9 @@ export function MultiplayerGame({
   // The pair they were on when knocked out (the server's, if it has one).
   const lastPair = me?.pair ?? state.pair;
   const why = reason && lastPair ? explainGameOver(reason, input, lastPair) : null;
-  const myStreak = me?.streak ?? state.streak;
+  // My words (the server's, if it has them), and the points they're worth.
+  const myWords = me?.usedWords ?? state.usedWords;
+  const myPoints = scoreFor(myWords);
 
   // --- Results: everyone is out (or the sprint is over) ----------------------
   if (room.phase === "finished") {
@@ -121,18 +125,16 @@ export function MultiplayerGame({
     const iWon = !tie && winner?.id === myId;
     const isHost = room.hostId === myId;
     const host = room.players.find((p) => p.id === room.hostId);
-    const score = winner?.streak ?? 0;
+    const score = pointsLabel(winner ? scoreFor(winner.usedWords) : 0);
 
     let title = iWon ? "You win!" : `${winner?.name ?? "Nobody"} wins!`;
-    let subtitle = sprint
-      ? `${iWon ? "You" : (winner?.name ?? "")} found ${score} ${score === 1 ? "word" : "words"}.`
-      : `${iWon ? "You" : (winner?.name ?? "")} reached a streak of ${score}.`;
+    let subtitle = `${iWon ? "You" : (winner?.name ?? "")} scored ${score}.`;
     if (tie) {
       // "You" always comes first ("You and Ann…", never "Ann and You…").
       const iTied = winners.some((p) => p.id === myId);
       const names = [...(iTied ? ["You"] : []), ...winners.filter((p) => p.id !== myId).map((p) => p.name)];
       title = "It's a tie!";
-      subtitle = `${names.slice(0, -1).join(", ")} and ${names.at(-1)} found ${score} ${score === 1 ? "word" : "words"} each.`;
+      subtitle = `${names.slice(0, -1).join(", ")} and ${names.at(-1)} scored ${score} each.`;
     }
 
     return (
@@ -160,8 +162,9 @@ export function MultiplayerGame({
     <section className="flex w-full flex-col items-center gap-8 text-center">
       <ScreenHeader title={sprint ? "Time's up!" : "You're out"} subtitle={sprint ? undefined : (why ?? undefined)} />
       <div className="flex flex-col items-center gap-1">
-        <div className="text-7xl leading-none font-bold tabular-nums">{myStreak}</div>
-        <div className="text-sm text-muted">{sprint ? "Your words" : "Your streak"}</div>
+        <div className="text-7xl leading-none font-bold tabular-nums">{myPoints}</div>
+        <div className="text-sm text-muted">Your points</div>
+        {room.mode && <div className="text-sm text-muted">{wordCountLabel(room.mode, myWords.length)}</div>}
       </div>
       <Standings room={room} myId={myId} title="Live standings" />
       {game.exampleWords.length > 0 && (

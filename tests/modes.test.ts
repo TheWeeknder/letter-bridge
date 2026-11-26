@@ -1,7 +1,15 @@
 // Tests for the two game modes (Streak and Sprint) and the rules that differ.
 import { describe, expect, it } from "vitest";
 import { SPRINT_SECONDS, TIME_LIMITS } from "@/lib/game/config";
-import { GAME_MODES, isGameMode, isSprint, modeLabel, modeSeconds, warnsInstead } from "@/lib/game/modes";
+import {
+  GAME_MODES,
+  isGameMode,
+  isSprint,
+  modeLabel,
+  modeSeconds,
+  warnsInstead,
+  wordCountLabel,
+} from "@/lib/game/modes";
 import type { RejectionReason } from "@/lib/game/types";
 
 const MISTAKES = ["WRONG_START", "WRONG_END", "NOT_A_WORD"] as const;
@@ -44,5 +52,13 @@ describe("warnsInstead", () => {
     const empty: RejectionReason = "EMPTY";
     expect(warnsInstead(5, empty)).toBe(false);
     expect(warnsInstead("sprint", empty)).toBe(false);
+  });
+});
+
+describe("wordCountLabel", () => {
+  it("says Streak N in Streak, and N word(s) in Sprint", () => {
+    expect(wordCountLabel(10, 4)).toBe("Streak 4");
+    expect(wordCountLabel("sprint", 4)).toBe("4 words");
+    expect(wordCountLabel("sprint", 1)).toBe("1 word");
   });
 });

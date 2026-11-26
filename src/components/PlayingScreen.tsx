@@ -1,6 +1,6 @@
 "use client";
 // =============================================================================
-// PlayingScreen — the screen while a round is on: score, the two letters,
+// PlayingScreen — the screen while a round is on: points, the two letters,
 // the countdown and the answer box. Shared by solo (app/solo/page.tsx) and
 // multiplayer (room/MultiplayerGame.tsx), so both play exactly the same.
 //
@@ -10,30 +10,38 @@
 // =============================================================================
 
 import type { ReactNode } from "react";
-import { isSprint, modeSeconds } from "@/lib/game/modes";
+import { modeSeconds, wordCountLabel } from "@/lib/game/modes";
+import { scoreFor, wordPoints } from "@/lib/game/scoring";
 import type { GameState } from "@/lib/game/types";
 import { explainWarning } from "@/lib/game/validator";
 import { AnswerInput } from "./AnswerInput";
 import { CountdownBar } from "./CountdownBar";
 import { LetterPair } from "./LetterPair";
-import { StreakCounter } from "./StreakCounter";
+import { ScoreCounter } from "./ScoreCounter";
 
 export interface PlayingScreenProps {
   state: GameState; // must be in the "playing" phase, with a pair and mode
   secondsLeft: number;
   onSubmit: (input: string) => void;
-  best?: number; // solo: the saved best for this mode (multiplayer leaves it out)
-  top?: ReactNode; // shown above the streak, e.g. the opponents strip
+  best?: number; // solo: the saved best points for this mode (multiplayer leaves it out)
+  top?: ReactNode; // shown above the score, e.g. the opponents strip
 }
 
 export function PlayingScreen({ state, secondsLeft, onSubmit, best, top }: PlayingScreenProps) {
   if (!state.pair || !state.mode) return null;
   const pair = state.pair;
+  const lastWord = state.usedWords.at(-1);
 
   return (
     <section className="flex w-full flex-col items-center gap-8">
       {top}
-      <StreakCounter streak={state.streak} best={best} label={isSprint(state.mode) ? "Words" : "Streak"} />
+      <ScoreCounter
+        points={scoreFor(state.usedWords)}
+        words={state.usedWords.length}
+        wordsText={wordCountLabel(state.mode, state.usedWords.length)}
+        lastWordPoints={lastWord ? wordPoints(lastWord) : undefined}
+        best={best}
+      />
       <LetterPair pair={pair} />
       <div className="flex w-full flex-col items-center gap-1">
         <CountdownBar

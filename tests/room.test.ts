@@ -246,11 +246,12 @@ describe("finishing, ranking and rematch", () => {
     expect(finished.phase).toBe("finished");
   });
 
-  it("ranks by streak, then by who lasted longer", () => {
+  it("ranks by points, then by who lasted longer", () => {
     expect(rankPlayers(finished.players).map((p) => p.id)).toEqual(["a", "b"]);
+    // Equal points (6 each): in Streak, whoever was knocked out later is ahead.
     const tie = [
-      { ...finished.players[0], streak: 3, outAt: 100 },
-      { ...finished.players[1], streak: 3, outAt: 200 },
+      { ...finished.players[0], usedWords: ["cat", "dog"], outAt: 100 },
+      { ...finished.players[1], usedWords: ["rabbit"], outAt: 200 },
     ];
     expect(rankPlayers(tie).map((p) => p.id)).toEqual(["b", "a"]);
     const stillPlaying = [{ ...tie[1] }, { ...tie[0], outAt: null }];
@@ -387,17 +388,28 @@ describe("sprint mode (one shared clock, mistakes only warn)", () => {
     expect(lobby).toMatchObject({ phase: "lobby", mode: "sprint", startedAt: null });
   });
 
-  it("equal word counts share the place; Streak keeps breaking ties", () => {
+  it("equal points share the place; Streak keeps breaking ties", () => {
     const [a, b] = sprint.players;
     const c = { ...a, id: "c" };
     const players = [
-      { ...a, streak: 4 },
-      { ...b, streak: 6 },
-      { ...c, streak: 6 },
+      { ...a, streak: 2, usedWords: ["cat", "dog"] }, // 6 points
+      { ...b, streak: 1, usedWords: ["superheroes"] }, // 11 points
+      { ...c, streak: 2, usedWords: ["soaps", "rabbit"] }, // 11 points
     ];
     const ranked = rankPlayers(players, "sprint");
     expect(ranked.map((p) => p.id)).toEqual(["b", "c", "a"]);
     expect(placesFor(ranked, "sprint")).toEqual([1, 1, 3]);
     expect(placesFor(ranked, 5)).toEqual([1, 2, 3]);
+  });
+
+  it("the same number of words is NOT a tie when the words are longer", () => {
+    const [a, b] = sprint.players;
+    const players = [
+      { ...a, streak: 2, usedWords: ["cat", "dog"] }, // 6 points
+      { ...b, streak: 2, usedWords: ["soaps", "superheroes"] }, // 16 points
+    ];
+    const ranked = rankPlayers(players, "sprint");
+    expect(ranked.map((p) => p.id)).toEqual(["b", "a"]);
+    expect(placesFor(ranked, "sprint")).toEqual([1, 2]);
   });
 });
