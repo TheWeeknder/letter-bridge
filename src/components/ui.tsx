@@ -4,11 +4,13 @@
 // tokens in globals.css (see DESIGN.md): flat surfaces, pill buttons, square
 // letter tiles and small rounded keys.
 //
-// The type scale (biggest to smallest):
-//   hero number    text-7xl     the one thing to look at (letters, final score)
-//   ScreenHeader   text-display one per screen, in the slab font: "Game over"
-//   SectionHeading text-sm      semibold, sentence case: "High scores · 10s"
-//   captions       text-sm      text-muted
+// The type scale (biggest to smallest). Headlines are deliberately big and
+// chunky, all in the slab font (font-display):
+//   hero number    text-7xl      the one thing to look at (letters, final score)
+//   ScreenHeader   text-display  40px, one per screen: "Game over"
+//   big choice     text-headline 32px, e.g. "Streak" / "Sprint" in ModePicker
+//   SectionHeading text-section  22px, sentence case: "High scores · 10s"
+//   captions       text-sm       text-muted
 // Colour: emerald (accent) for the main action and good news, red (danger)
 // only for problems. Token colours switch for dark mode by themselves.
 // =============================================================================
@@ -28,7 +30,7 @@ export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: Re
 
 /** A heading above a group of things on a screen (a list, a picker…). */
 export function SectionHeading({ children }: { children: ReactNode }) {
-  return <h3 className="text-sm font-semibold">{children}</h3>;
+  return <h3 className="font-display text-section">{children}</h3>;
 }
 
 /** The emerald focus ring every clickable thing shares (keyboard users see it). */

@@ -15,8 +15,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       {/* The app's name, small, so each screen's own title ("How to play",
           "Game over") is the clear headline. The bar spans the full width. */}
-      <header className="flex h-14 shrink-0 items-center justify-center border-b border-line">
-        <h1 className="font-display text-2xl">
+      <header className="flex h-16 shrink-0 items-center justify-center border-b border-line">
+        <h1 className="font-display text-3xl">
           <Link href="/">{APP_NAME}</Link>
         </h1>
       </header>

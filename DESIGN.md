@@ -157,12 +157,13 @@ Zilla Slab is a free (SIL Open Font Licence) heavy slab serif, chosen to give th
 |---|---|---|
 | Hero number (letters, final score) | `text-7xl font-bold` | 72px |
 | Game name, big | `font-display text-wordmark` | 44px |
-| Game name in the top bar | `font-display text-2xl` | 24px |
-| Screen title (one per screen) | `font-display text-display` (`ScreenHeader`) | 28px |
+| Game name in the top bar | `font-display text-3xl` | 30px |
+| Screen title (one per screen) | `font-display text-display` (`ScreenHeader`) | 40px |
+| Big choice ("Streak", "Sprint") | `font-display text-headline` | 32px |
 | Tile letter | `text-tile font-bold uppercase` | 32px |
 | Key letter | `text-keycap font-bold uppercase` | 20px |
 | Body | `text-base` | 16px |
-| Section heading | `text-sm font-semibold` (sentence case) | 14px |
+| Section heading | `font-display text-section` (`SectionHeading`, sentence case) | 22px |
 | Caption | `text-sm text-muted` / `text-xs` | 14 / 12px |
 
 ### Spacing and sizes
@@ -225,7 +226,7 @@ Use these instead of repeating the classes:
 | Divider | `border-t border-line` (the top bar uses `border-b border-line`) |
 
 ### Layout
-- A full-width top bar (`h-14`, thin line under it) with the game name, from `AppShell`.
+- A full-width top bar (`h-16`, thin line under it) with the game name, from `AppShell`.
 - One centred column below it. Content is no wider than `max-w-sm` for text.
 - Use `max-w-xs` for buttons and lists.
 - `max-w-board` (330px) for a row of tiles.

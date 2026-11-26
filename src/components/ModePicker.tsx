@@ -1,9 +1,11 @@
 "use client";
 // =============================================================================
-// ModePicker — choose how to play, in two short sections:
+// ModePicker — choose how to play, in two short sections, each with a big
+// slab headline (text-headline) so the two choices stand out:
 //
-//   Streak: seconds per word    [10s] [5s] [3s]   one wrong word ends it
-//   Sprint: 30 seconds          [30s sprint]      as many words as you can
+//   Streak    seconds per word    [10s] [5s] [3s]   one wrong word ends it
+//     OR
+//   Sprint    30 seconds          [30s sprint]      as many words as you can
 //
 // Solo starts a game the moment you tap; the multiplayer lobby only selects
 // (the host presses Start afterwards). Both use this same component, so the
@@ -15,7 +17,7 @@ import type { ReactNode } from "react";
 import { SPRINT_SECONDS, TIME_LIMITS } from "@/lib/game/config";
 import { type GameMode, isSprint, modeLabel } from "@/lib/game/modes";
 import { TimeLimitPicker } from "./TimeLimitPicker";
-import { CHOICE_KEY, CHOICE_KEY_STATE, SectionHeading } from "./ui";
+import { CHOICE_KEY, CHOICE_KEY_STATE } from "./ui";
 
 export interface ModePickerProps {
   onPick: (mode: GameMode) => void;
@@ -27,9 +29,9 @@ export interface ModePickerProps {
 function Section({ title, hint, best, children }: { title: string; hint: string; best?: string; children: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="flex flex-col items-center gap-0.5">
-        <SectionHeading>{title}</SectionHeading>
-        <p className="text-sm text-muted">{hint}</p>
+      <div className="flex flex-col items-center gap-1">
+        <h3 className="font-display text-headline">{title}</h3>
+        <p className="text-sm">{hint}</p>
       </div>
       {children}
       {best && <p className="text-sm text-muted tabular-nums">{best}</p>}
@@ -46,18 +48,20 @@ export function ModePicker({ onPick, selected = null, bests }: ModePickerProps) 
   const sprintSelected = selected !== null && isSprint(selected);
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-6">
       <Section
-        title="Streak: seconds per word"
-        hint="A fresh timer for every word. One wrong word ends it."
+        title="Streak"
+        hint="Seconds per word, fresh for every word. One wrong word ends it."
         best={streakBests ? `Best — ${streakBests}` : undefined}
       >
         <TimeLimitPicker onPick={onPick} selected={selected === null || isSprint(selected) ? null : selected} />
       </Section>
 
+      <section className="text-lg"> OR </section>
+
       <Section
-        title={`Sprint: ${SPRINT_SECONDS} seconds`}
-        hint="As many words as you can. Mistakes only warn you."
+        title="Sprint"
+        hint={`${SPRINT_SECONDS} seconds, as many words as you can. Mistakes only warn you.`}
         best={sprintBest > 0 ? `Best — ${sprintBest} ${sprintBest === 1 ? "word" : "words"}` : undefined}
       >
         <button
