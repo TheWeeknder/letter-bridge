@@ -148,7 +148,7 @@ describe("the examples from the game rules (real dictionary)", () => {
   });
 });
 
-describe("the bigger dictionary (ENABLE + SCOWL additions + extra-words.txt)", () => {
+describe("the bigger dictionary (ENABLE + SCOWL additions + proper-nouns.txt + extra-words.txt)", () => {
   const data = readLocalWordData();
 
   /** Check a word against the real dictionary, using its own first/last letter. */
@@ -162,6 +162,15 @@ describe("the bigger dictionary (ENABLE + SCOWL additions + extra-words.txt)", (
 
   it('accepts "nile", which we added by hand in extra-words.txt', () => {
     expect(realWord("nile")).toEqual({ ok: true, word: "nile" });
+  });
+
+  it("accepts everyday capitalised words from proper-nouns.txt, typed in any case", () => {
+    // One from each group: month, day, holiday, country, nationality,
+    // language, US state, province, city.
+    for (const word of ["april", "monday", "halloween", "canada", "american", "french", "texas", "ontario", "london"]) {
+      expect(realWord(word)).toEqual({ ok: true, word });
+    }
+    expect(realWord("April")).toEqual({ ok: true, word: "april" });
   });
 
   it("accepts newer words that only SCOWL knows", () => {

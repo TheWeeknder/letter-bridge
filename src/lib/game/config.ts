@@ -55,11 +55,15 @@ export const EXAMPLE_WORD_COUNT = 2;
  * them. To add another list, drop the file in /data and add its name here.
  *   enable1.txt          ~173k words, the main list
  *   scowl-additions.txt  ~17k newer words ENABLE lacks ("blog", "selfie")
+ *   proper-nouns.txt     capitalised everyday words the big lists skip:
+ *                        months, days, holidays, countries, nationalities,
+ *                        languages, states and big cities ("april", "canada")
  *   extra-words.txt      words you add by hand ("nile")
  */
 export const VALIDATION_LIST_FILES = [
   "enable1.txt",
   "scowl-additions.txt",
+  "proper-nouns.txt",
   "extra-words.txt",
 ] as const;
 

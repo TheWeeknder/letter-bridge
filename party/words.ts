@@ -11,6 +11,7 @@
 import common from "../data/common-10k.txt";
 import enable1 from "../data/enable1.txt";
 import extraWords from "../data/extra-words.txt";
+import properNouns from "../data/proper-nouns.txt";
 import scowlAdditions from "../data/scowl-additions.txt";
 import { type VALIDATION_LIST_FILES } from "../src/lib/game/config";
 import type { WordData } from "../src/lib/game/types";
@@ -24,6 +25,7 @@ import { buildWordData } from "../src/lib/game/wordLists";
 const VALIDATION_TEXTS: Record<(typeof VALIDATION_LIST_FILES)[number], string> = {
   "enable1.txt": enable1,
   "scowl-additions.txt": scowlAdditions,
+  "proper-nouns.txt": properNouns,
   "extra-words.txt": extraWords,
 };
 

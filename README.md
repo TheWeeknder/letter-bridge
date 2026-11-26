@@ -113,9 +113,10 @@ The game needs an internet connection to load the first time. Offline play (a se
 
 ## The dictionary
 
-Answers are checked against about 189k words, merged from three files in [data/](data/):
+Answers are checked against about 190k words, merged from four files in [data/](data/):
 - `enable1.txt`: the main list
 - `scowl-additions.txt`: newer words like "selfie"
+- `proper-nouns.txt`: everyday capitalised words the big lists skip, like "april", "monday", "canada", "french", "texas" and "london" (months, days, holidays, countries, nationalities, languages, states and big cities; no first names or brands)
 - `extra-words.txt`: words you add by hand, like "nile"
 
 To make a word count, add it to [data/extra-words.txt](data/extra-words.txt) and restart `npm run dev`. To refresh the SCOWL words, run `npm run dict:fetch`. For sources, licenses and more maintenance tips, see [data/SOURCES.md](data/SOURCES.md).
