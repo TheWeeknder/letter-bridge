@@ -39,6 +39,19 @@ describe("parseHighScores", () => {
     expect(Object.keys(boards)).not.toContain("99");
   });
 
+  it("keeps a separate board for sprints", () => {
+    const boards = { ...emptyBoards(), sprint: [e(18), e(12)] };
+    const parsed = parseHighScores(JSON.stringify(boards));
+    expect(parsed.sprint).toEqual([e(18), e(12)]);
+    expect(bestFor(parsed, "sprint")).toBe(18);
+  });
+
+  it("still loads scores saved before sprints existed", () => {
+    const parsed = parseHighScores(JSON.stringify({ 10: [e(9)], 5: [e(4)], 3: [] }));
+    expect(parsed[10]).toEqual([e(9)]);
+    expect(parsed.sprint).toEqual([]);
+  });
+
   it("sorts and caps saved boards", () => {
     const raw = JSON.stringify({ 3: [e(1), e(9), e(4), e(7), e(2), e(8), e(3)] });
     expect(parseHighScores(raw)[3].map((x) => x.streak)).toEqual([9, 8, 7, 4, 3]);

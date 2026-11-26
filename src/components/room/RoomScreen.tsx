@@ -6,7 +6,7 @@
 //   no nickname yet   -> NicknameForm
 //   connecting        -> "Connecting…"
 //   no seat           -> Spectator (room full / game already running / removed)
-//   lobby             -> Lobby (player list, host picks a time and starts)
+//   lobby             -> Lobby (player list, host picks a mode and starts)
 //   playing/finished  -> MultiplayerGame (the game, then the results)
 //
 // If the connection drops, the current screen stays put with a small
@@ -48,7 +48,7 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
   const [editingName, setEditingName] = useState(false);
 
   const roomApi = useRoom(code, isValidRoomCode(code) ? nickname : null);
-  const { room, connected, myId, error } = roomApi;
+  const { room, connected, myId, error, serverOffset } = roomApi;
   // Start downloading the word lists right away, while people gather in the lobby.
   const { data, error: wordsError } = useWordData();
 
@@ -120,6 +120,7 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
         room={room}
         myId={me.id}
         data={data}
+        serverOffset={serverOffset}
         sendAnswer={roomApi.sendAnswer}
         sendTimeout={roomApi.sendTimeout}
         onRematch={roomApi.rematch}

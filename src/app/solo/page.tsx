@@ -1,14 +1,14 @@
 "use client";
 // =============================================================================
-// solo/page.tsx — single player ("/solo"): pick a time limit and play.
+// solo/page.tsx — single player ("/solo"): pick a mode and play.
 //
 // This file only decides WHICH screen to show. All the rules live in
 // lib/game (pure logic) and are wired together by the useGame hook.
 //
 //   loading / error -> waiting for the word lists
-//   "setup"         -> pick a time limit
-//   "playing"       -> streak, letters, countdown bar, answer box
-//   "over"          -> final streak, reason, high scores, play again / home
+//   "setup"         -> pick a mode: Streak (10s/5s/3s per word) or Sprint (30s)
+//   "playing"       -> score, letters, countdown bar, answer box
+//   "over"          -> final score, reason, high scores, play again / home
 //
 // "use client" = this component runs in the browser, which we need because
 // it uses React hooks and downloads the word lists with fetch().
@@ -19,13 +19,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { GameOver } from "@/components/GameOver";
 import { PlayingScreen } from "@/components/PlayingScreen";
-import { TimeLimitPicker } from "@/components/TimeLimitPicker";
-import { BackLink, ScreenHeader, SectionHeading } from "@/components/ui";
+import { ModePicker } from "@/components/ModePicker";
+import { BackLink, ScreenHeader } from "@/components/ui";
 import { useGame } from "@/hooks/useGame";
 import { useHighScores } from "@/hooks/useHighScores";
 import { useWordData } from "@/hooks/useWordData";
-import { TIME_LIMITS, type TimeLimit } from "@/lib/game/config";
 import { type HighScoreEntry, bestFor, insertScore, rankFor } from "@/lib/game/highScores";
+import { GAME_MODES, type GameMode } from "@/lib/game/modes";
 
 export default function SoloPage() {
   const router = useRouter();
@@ -35,23 +35,23 @@ export default function SoloPage() {
   // Next.js keeps this page alive (hidden) when you navigate away, so its
   // state would otherwise still be there when you come back: e.g. the old
   // game-over screen. This cleanup runs whenever the page is hidden and
-  // resets the game, so "Play solo" always opens on the time options.
+  // resets the game, so "Play solo" always opens on the mode options.
   // (useLayoutEffect: the reset happens before the page is hidden, so the
   // old screen never flashes on the way back.)
   useLayoutEffect(() => reset, [reset]);
   const { boards, save } = useHighScores();
 
   // --- High scores -----------------------------------------------------------
-  // This time limit's board as it was when the game STARTED. The saved board
+  // This mode's board as it was when the game STARTED. The saved board
   // changes the moment the game ends, but the rank ("New high score! #2") and
   // the board on the game-over screen are worked out from the OLD one, so
   // they're right on the very first render.
   const [boardBeforeGame, setBoardBeforeGame] = useState<HighScoreEntry[]>([]);
 
   /** Start a game, remembering the board from before it. */
-  function startGame(timeLimit: TimeLimit) {
-    setBoardBeforeGame(boards[timeLimit]);
-    start(timeLimit);
+  function startGame(mode: GameMode) {
+    setBoardBeforeGame(boards[mode]);
+    start(mode);
   }
 
   // Only meaningful once the game is over: this game's place on the board
@@ -60,11 +60,11 @@ export default function SoloPage() {
   const shownBoard =
     rank === null ? boardBeforeGame : insertScore(boardBeforeGame, { streak: state.streak, words: state.usedWords });
 
-  // The game-over screen's "Play again" reuses the last time limit. It only
-  // renders when timeLimit is set, so the fallback never actually runs.
-  const lastTimeLimit = state.timeLimit;
+  // The game-over screen's "Play again" reuses the last mode. It only
+  // renders when mode is set, so the fallback never actually runs.
+  const lastMode = state.mode;
   function playAgain() {
-    if (lastTimeLimit) startGame(lastTimeLimit);
+    if (lastMode) startGame(lastMode);
   }
 
   // When a game ends (by a wrong answer OR the timer), save it if it made the
@@ -73,17 +73,15 @@ export default function SoloPage() {
   // never added twice, e.g. when React runs the effect again.
   const handledRoundRef = useRef<number | null>(null);
   useEffect(() => {
-    if (state.phase !== "over" || !state.timeLimit) return;
+    if (state.phase !== "over" || !state.mode) return;
     if (handledRoundRef.current === state.roundId) return;
     handledRoundRef.current = state.roundId;
     if (rankFor(boardBeforeGame, state.streak) === null) return; // didn't make the board
-    save(state.timeLimit, { streak: state.streak, words: state.usedWords });
-  }, [state.phase, state.roundId, state.timeLimit, state.streak, state.usedWords, boardBeforeGame, save]);
+    save(state.mode, { streak: state.streak, words: state.usedWords });
+  }, [state.phase, state.roundId, state.mode, state.streak, state.usedWords, boardBeforeGame, save]);
 
-  // Setup screen: the best streak for each time limit that has one.
-  const bestPerMode = TIME_LIMITS.filter((limit) => bestFor(boards, limit) > 0)
-    .map((limit) => `${limit}s: ${bestFor(boards, limit)}`)
-    .join(" · ");
+  // Setup screen: the best score for every mode (the picker shows the ones above 0).
+  const bests = Object.fromEntries(GAME_MODES.map((mode) => [mode, bestFor(boards, mode)]));
 
   return (
     <AppShell>
@@ -91,31 +89,27 @@ export default function SoloPage() {
       {loading && <p className="text-zinc-500">Loading word lists…</p>}
       {error && <p className="text-red-600">Could not load the word lists: {error}</p>}
 
-      {/* --- Setup: choose a time limit --- */}
+      {/* --- Setup: choose a mode --- */}
       {data && state.phase === "setup" && (
         <section className="flex flex-col items-center gap-8 text-center">
-          <ScreenHeader title="Play solo" subtitle="How long do you want for each word? Fewer seconds, more pressure." />
-          <div className="flex flex-col items-center gap-3">
-            <SectionHeading>Seconds per word</SectionHeading>
-            <TimeLimitPicker onPick={startGame} selected={state.timeLimit} />
-            {bestPerMode && <p className="text-sm text-zinc-500 tabular-nums">Best — {bestPerMode}</p>}
-          </div>
+          <ScreenHeader title="Play solo" subtitle="Pick how you want to play. Tap one to start." />
+          <ModePicker onPick={startGame} selected={state.mode} bests={bests} />
           <BackLink />
         </section>
       )}
 
       {/* --- Playing --- */}
-      {data && state.phase === "playing" && state.timeLimit && (
+      {data && state.phase === "playing" && state.mode && (
         <PlayingScreen
           state={state}
           secondsLeft={secondsLeft}
           onSubmit={submit}
-          best={bestFor(boards, state.timeLimit)}
+          best={bestFor(boards, state.mode)}
         />
       )}
 
       {/* --- Game over --- */}
-      {data && state.phase === "over" && state.pair && state.gameOverReason && state.timeLimit && (
+      {data && state.phase === "over" && state.pair && state.gameOverReason && state.mode && (
         <GameOver
           streak={state.streak}
           board={shownBoard}
@@ -123,7 +117,7 @@ export default function SoloPage() {
           reason={state.gameOverReason}
           lastInput={state.lastInput}
           pair={state.pair}
-          timeLimit={state.timeLimit}
+          mode={state.mode}
           exampleWords={exampleWords}
           onPlayAgain={playAgain}
           onHome={() => router.push("/")}

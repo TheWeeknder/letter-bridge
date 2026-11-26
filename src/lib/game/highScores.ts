@@ -1,6 +1,7 @@
 // =============================================================================
 // highScores.ts — pure rules for the high score boards: one top-5 list per
-// time limit, each entry remembering the streak and the words used.
+// game mode (10s, 5s, 3s and the 30s sprint), each entry remembering the
+// score and the words used.
 //
 // WHY separate from storage: where scores are kept (localStorage today, maybe
 // a server once multiplayer arrives) is a browser/network detail. The rules
@@ -8,23 +9,26 @@
 // valid?") are plain functions, so tests can check them without a browser.
 // =============================================================================
 
-import { HIGH_SCORE_LIMIT, TIME_LIMITS, type TimeLimit } from "./config";
+import { HIGH_SCORE_LIMIT } from "./config";
+import { GAME_MODES, type GameMode } from "./modes";
 
 /** One finished game on a board. */
 export interface HighScoreEntry {
+  // The score: the streak in Streak mode, the number of words in Sprint.
+  // (Still called "streak" so scores saved before Sprint existed load fine.)
   streak: number;
-  words: string[]; // the words accepted during that streak, in order
+  words: string[]; // the words accepted during that game, in order
 }
 
-/** Every board, one per time limit. Each is sorted best first. */
-export type HighScoreBoards = Record<TimeLimit, HighScoreEntry[]>;
+/** Every board, one per game mode. Each is sorted best first. */
+export type HighScoreBoards = Record<GameMode, HighScoreEntry[]>;
 
 /** The localStorage key the boards are saved under (as JSON). */
 export const HIGH_SCORES_STORAGE_KEY = "letter-bridge:high-scores";
 
 /** A fresh set of boards with no scores yet. */
 export function emptyBoards(): HighScoreBoards {
-  return Object.fromEntries(TIME_LIMITS.map((limit) => [limit, []])) as unknown as HighScoreBoards;
+  return Object.fromEntries(GAME_MODES.map((mode) => [mode, []])) as unknown as HighScoreBoards;
 }
 
 /** Is `value` a well-formed entry? Anything else is dropped when loading. */
@@ -49,8 +53,9 @@ function tidy(board: HighScoreEntry[]): HighScoreEntry[] {
 
 /**
  * Turn whatever was saved in storage back into boards. Anything missing or
- * broken (null, bad JSON, wrong shapes, unknown time limits) is ignored, so a
- * corrupted value can never crash the game or show a weird board.
+ * broken (null, bad JSON, wrong shapes, unknown modes) is ignored, so a
+ * corrupted value can never crash the game or show a weird board. Scores
+ * saved before Sprint existed simply have no "sprint" board yet.
  */
 export function parseHighScores(raw: string | null): HighScoreBoards {
   const boards = emptyBoards();
@@ -64,11 +69,11 @@ export function parseHighScores(raw: string | null): HighScoreBoards {
   }
   if (typeof saved !== "object" || saved === null) return boards;
 
-  for (const limit of TIME_LIMITS) {
+  for (const mode of GAME_MODES) {
     // JSON object keys are always strings, so 5 is saved as "5".
-    const board = (saved as Record<string, unknown>)[String(limit)];
+    const board = (saved as Record<string, unknown>)[String(mode)];
     if (Array.isArray(board)) {
-      boards[limit] = tidy(
+      boards[mode] = tidy(
         board.filter(isValidEntry).map(({ streak, words }) => ({ streak, words: [...words] })),
       );
     }
@@ -92,7 +97,7 @@ export function insertScore(board: HighScoreEntry[], entry: HighScoreEntry): Hig
   return tidy([...board, entry]);
 }
 
-/** The best streak for one time limit (0 if its board is empty). */
-export function bestFor(boards: HighScoreBoards, timeLimit: TimeLimit): number {
-  return boards[timeLimit][0]?.streak ?? 0;
+/** The best score for one mode (0 if its board is empty). */
+export function bestFor(boards: HighScoreBoards, mode: GameMode): number {
+  return boards[mode][0]?.streak ?? 0;
 }

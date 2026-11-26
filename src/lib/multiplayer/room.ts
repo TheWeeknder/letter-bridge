@@ -14,21 +14,24 @@
 // false). Coming back within RECONNECT_GRACE_MS puts them right back, even
 // mid-game. Outside a game, a seat left empty longer than that is freed.
 //
-// The game is "parallel survival": every player gets the SAME sequence of
-// letter pairs (from the shared seed) and plays their own streak on their own
-// timer. A wrong answer or running out of time knocks you out. When everyone
-// is out, the highest streak wins.
+// Every player gets the SAME sequence of letter pairs (from the shared seed)
+// and plays their own game. Two modes (see lib/game/modes.ts):
+//   Streak  "parallel survival": your own timer per word; a wrong answer or
+//           running out of time knocks you out. Highest streak wins.
+//   Sprint  one shared clock for everyone; wrong answers only warn, so
+//           everyone plays until time is up. Most words wins; equal counts
+//           share the place.
 // =============================================================================
 
-import type { TimeLimit } from "../game/config";
+import { type GameMode, isSprint, modeSeconds, warnsInstead } from "../game/modes";
 import { pairForRound } from "../game/random";
 import type { GameOverReason, LetterPair, WordData } from "../game/types";
-import { isWarningReason, validateAnswer } from "../game/validator";
+import { validateAnswer } from "../game/validator";
 import { MAX_PLAYERS, MIN_PLAYERS, NICKNAME_MAX_LENGTH, RECONNECT_GRACE_MS, TIMEOUT_GRACE_MS } from "./config";
 
 export type RoomPhase = "lobby" | "playing" | "finished";
 
-/** "lobby" = waiting; "playing" = still in the game; "out" = knocked out. */
+/** "lobby" = waiting; "playing" = still in the game; "out" = knocked out (or, in Sprint, time's up). */
 export type PlayerStatus = "lobby" | "playing" | "out";
 
 export interface RoomPlayer {
@@ -52,7 +55,8 @@ export interface RoomState {
   players: RoomPlayer[]; // in the order they joined
   hostId: string | null; // the player who can start the game
   seed: string | null; // decides the letter pairs (see lib/game/random.ts)
-  timeLimit: TimeLimit | null;
+  mode: GameMode | null; // Streak (seconds per word) or Sprint; kept after a game so the host's last choice is remembered
+  startedAt: number | null; // server time (ms) the game began; Sprint's shared clock counts from here
 }
 
 /** Everything that can happen in a room. `now` is the server's clock in ms. */
@@ -61,7 +65,7 @@ export type RoomEvent =
   | { type: "disconnect"; playerId: string; now: number } // connection lost: keep the seat for now
   | { type: "leave"; playerId: string } // left on purpose: free the seat now
   | { type: "kick"; playerId: string; targetId: string } // host removes someone (not during a game)
-  | { type: "start"; playerId: string; timeLimit: TimeLimit; seed: string; now: number }
+  | { type: "start"; playerId: string; mode: GameMode; seed: string; now: number }
   | { type: "answer"; playerId: string; round: number; input: string; now: number }
   | { type: "timeout"; playerId: string; round: number }
   | { type: "tick"; now: number } // the server's clock: expired rounds and abandoned seats
@@ -75,7 +79,7 @@ export type RoomWords = Pick<WordData, "validation" | "eligiblePairs">;
 
 /** A brand-new, empty room. */
 export function createRoom(): RoomState {
-  return { phase: "lobby", players: [], hostId: null, seed: null, timeLimit: null };
+  return { phase: "lobby", players: [], hostId: null, seed: null, mode: null, startedAt: null };
 }
 
 /** A player as they are in the lobby: no game state yet. */
@@ -110,23 +114,44 @@ export function cleanNickname(raw: string): string {
 }
 
 /**
- * When the server stops waiting for this player's answer (ms). It's the time
- * limit plus a little grace for network delay: the player's own screen runs
- * out first, so the grace never gives anyone extra thinking time.
+ * When the server stops waiting for this player's answer (ms): the round's
+ * time (Streak: from when this pair began; Sprint: from when the game began,
+ * the same moment for everyone) plus a little grace for network delay. The
+ * player's own screen runs out first, so the grace never gives anyone extra
+ * thinking time.
  */
-export function roundDeadline(player: RoomPlayer, timeLimit: TimeLimit): number | null {
-  if (player.status !== "playing" || player.roundStartedAt === null) return null;
-  return player.roundStartedAt + timeLimit * 1000 + TIMEOUT_GRACE_MS;
+export function roundDeadline(player: RoomPlayer, state: Pick<RoomState, "mode" | "startedAt">): number | null {
+  if (player.status !== "playing" || state.mode === null) return null;
+  const startedAt = isSprint(state.mode) ? state.startedAt : player.roundStartedAt;
+  if (startedAt === null) return null;
+  return startedAt + modeSeconds(state.mode) * 1000 + TIMEOUT_GRACE_MS;
 }
 
 /**
- * Players in finishing order: highest streak first; on a tie, whoever lasted
- * longer (still playing beats knocked out; out later beats out earlier).
+ * Players in finishing order, most words first. On equal words:
+ * - Streak: whoever lasted longer (still playing beats knocked out; out
+ *   later beats out earlier).
+ * - Sprint: everyone stops together, so they share the place (see placesFor);
+ *   the sort keeps them in joining order.
  */
-export function rankPlayers(players: RoomPlayer[]): RoomPlayer[] {
+export function rankPlayers(players: RoomPlayer[], mode: GameMode | null = null): RoomPlayer[] {
   return [...players].sort((a, b) => {
     if (b.streak !== a.streak) return b.streak - a.streak;
+    if (mode !== null && isSprint(mode)) return 0;
     return (b.outAt ?? Infinity) - (a.outAt ?? Infinity);
+  });
+}
+
+/**
+ * The place (1, 2, 3…) for each player of an already ranked list. In Sprint,
+ * equal word counts share a place (1, 1, 3); in Streak everyone gets their
+ * own place, because rankPlayers already broke the tie.
+ */
+export function placesFor(ranked: RoomPlayer[], mode: GameMode | null): number[] {
+  const sharing = mode !== null && isSprint(mode);
+  return ranked.map((player, i) => {
+    if (!sharing) return i + 1;
+    return ranked.findIndex((p) => p.streak === player.streak) + 1;
   });
 }
 
@@ -176,8 +201,9 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
       if (!name) return refuse("Please choose a nickname.");
 
       // Already has a seat: rename, and/or come back after a lost connection.
-      // Mid-game, a returning player gets a fresh round clock: their screen
-      // starts the round again, and the server's clock should match it.
+      // Mid-game in Streak, a returning player gets a fresh round clock: their
+      // screen starts the round again, and the server's clock should match it.
+      // Sprint's clock is shared, so it keeps running; nobody gets extra time.
       if (state.players.some((p) => p.id === event.playerId)) {
         return accept(
           updatePlayer(state, event.playerId, (p) => ({
@@ -185,7 +211,8 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
             name,
             connected: true,
             disconnectedAt: null,
-            roundStartedAt: p.status === "playing" ? event.now : p.roundStartedAt,
+            roundStartedAt:
+              p.status === "playing" && state.mode !== null && !isSprint(state.mode) ? event.now : p.roundStartedAt,
           })),
         );
       }
@@ -236,7 +263,8 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
         ...state,
         phase: "playing",
         seed: event.seed,
-        timeLimit: event.timeLimit,
+        mode: event.mode,
+        startedAt: event.now,
         players: state.players.map((p) => ({
           ...lobbyPlayer(p.id, p.name),
           status: "playing",
@@ -254,10 +282,10 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
       if (state.phase !== "playing" || !player || player.status !== "playing" || event.round !== player.streak) {
         return accept(state);
       }
-      if (!words || !player.pair || state.seed === null || state.timeLimit === null) return accept(state);
+      if (!words || !player.pair || state.seed === null || state.mode === null) return accept(state);
 
       // Too late? The server's clock has the final say.
-      const deadline = roundDeadline(player, state.timeLimit);
+      const deadline = roundDeadline(player, state);
       if (deadline !== null && event.now > deadline) {
         return accept(finishIfDone(updatePlayer(state, player.id, (p) => knockOut(p, "TIMEOUT", event.now, event.input))));
       }
@@ -283,8 +311,9 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
         );
       }
 
-      // Too short or repeated: the player just tries again (nothing changes).
-      if (isWarningReason(result.reason)) return accept(state);
+      // A mistake that only warns (Streak: too short or repeated; Sprint:
+      // anything): the player just tries again, nothing changes.
+      if (warnsInstead(state.mode, result.reason)) return accept(state);
 
       return accept(finishIfDone(updatePlayer(state, player.id, (p) => knockOut(p, result.reason, event.now, event.input))));
     }
@@ -301,13 +330,13 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
 
     // --- The server's clock: knock out anyone whose round has expired --------
     // This catches players whose browser went quiet (closed laptop, slow
-    // network, or a tampered page that never reports its own timeout).
+    // network, or a tampered page that never reports its own timeout). In
+    // Sprint it's also what ends the game for everyone at once.
     // Outside a game it also frees seats that have been empty too long.
     case "tick": {
-      if (state.phase === "playing" && state.timeLimit !== null) {
-        const timeLimit = state.timeLimit;
+      if (state.phase === "playing") {
         const players = state.players.map((p) => {
-          const deadline = roundDeadline(p, timeLimit);
+          const deadline = roundDeadline(p, state);
           return deadline !== null && event.now > deadline ? knockOut(p, "TIMEOUT", event.now, null) : p;
         });
         return accept(finishIfDone({ ...state, players }));
@@ -325,6 +354,7 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
         ...state,
         phase: "lobby",
         seed: null,
+        startedAt: null,
         players: state.players.map((p) => lobbyPlayer(p.id, p.name)),
       });
     }
@@ -338,9 +368,9 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
  */
 export function nextWakeup(state: RoomState): number | null {
   const times: number[] = [];
-  if (state.phase === "playing" && state.timeLimit !== null) {
+  if (state.phase === "playing") {
     for (const p of state.players) {
-      const deadline = roundDeadline(p, state.timeLimit);
+      const deadline = roundDeadline(p, state);
       if (deadline !== null) times.push(deadline);
     }
   } else {

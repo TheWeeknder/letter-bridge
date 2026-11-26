@@ -6,27 +6,34 @@ A fast word game. You get a **start letter** and an **end letter**, and you have
    A   …   e        ->   "astute" ✓   "able" ✓   "aeioue" ✗ (not a word)
 ```
 
-Every correct word adds 1 to your streak and brings a new pair of letters. The game works in any modern browser and can be installed on a phone like an app.
+Every correct word adds 1 to your score and brings a new pair of letters. There are two modes: **Streak** (a timer per word, one mistake ends it) and **Sprint** (30 seconds, as many words as you can). The game works in any modern browser and can be installed on a phone like an app.
 
 ## How to play
 
 The landing page has two buttons: **Play solo** and **Play with friends**.
 
-1. Choose **Play solo**, then pick how many seconds you get per word: **10**, **5** or **3**.
+1. Choose **Play solo**, then pick a mode (see below).
 2. Type a word that **starts** with the first letter and **ends** with the second, then press Enter.
-3. Keep going as long as you can. The game ends when:
-   - the word isn't in the dictionary or has the wrong first or last letter, or
-   - the timer runs out.
+
+**Streak: seconds per word (10, 5 or 3).** Every word gets a fresh timer. Keep going as long as you can. The game ends when:
+- the word isn't in the dictionary or has the wrong first or last letter, or
+- the timer runs out.
 
 If you type a word that's **too short** (under 3 letters) or one you **already used** in this streak, the game doesn't end. The box shakes and you can try again, but the clock keeps running.
 
-When the game ends you see why, plus a couple of words that would have worked. Your top 5 streaks for each time limit (with the words you used) are saved in your browser as high scores.
+**Sprint: 30 seconds.** One clock for the whole game: find as many words as you can before it runs out. Mistakes never end a sprint. A wrong letter, a word that isn't in the dictionary, a too-short or a repeated word only shakes the box and tells you why. You stay on the same letters until you find a word, so a mistake just costs time.
+
+When the game ends you see your score, plus a couple of words that would have worked. Your top 5 scores for each mode (with the words you used) are saved in your browser as high scores.
 
 ### Playing with friends
 
-Choose **Play with friends**, then **Create a room**, and share the 5-letter code or invite link with up to 3 friends. They choose **Play with friends** too and type the code under **Have a code?**, open the link, or **scan the QR code** in the waiting room with their phone camera, then pick a nickname. The first player in the room is the host: they choose the seconds per word and press **Start game**.
+Choose **Play with friends**, then **Create a room**, and share the 5-letter code or invite link with up to 3 friends. They choose **Play with friends** too and type the code under **Have a code?**, open the link, or **scan the QR code** in the waiting room with their phone camera, then pick a nickname. The first player in the room is the host: they choose the mode (Streak 10s/5s/3s or the 30-second Sprint) and press **Start game**.
 
-Everyone then gets the **same letter pairs in the same order** and plays their own streak on their own timer, with the others' streaks shown live above the letters. The usual rules apply: a wrong word or running out of time knocks you out, and too-short or repeated words are only warnings. When everyone is out, the **highest streak wins** (on a tie, whoever lasted longer). The host can then start a **rematch**.
+Everyone then gets the **same letter pairs in the same order** and plays their own game, with the others' scores shown live above the letters.
+- **Streak:** each player has their own timer. A wrong word or running out of time knocks you out; too-short or repeated words are only warnings. When everyone is out, the **highest streak wins** (on a tie, whoever lasted longer).
+- **Sprint:** one 30-second clock for everyone, and mistakes only warn. When time is up, **the most words wins**. Equal counts share the place ("It's a tie!").
+
+The host can then start a **rematch**.
 
 Answers are checked twice: instantly in your browser, and again by the room server with the same rules and dictionary. The server's verdict is final, so editing the page can't fake a streak.
 
@@ -80,7 +87,7 @@ Rooms then work from anywhere, over a secure connection, and the waiting room's 
 
 ### When connections drop
 
-- **Reload or lose signal briefly:** you're put back in your seat automatically (a small "Reconnecting…" banner shows meanwhile), even mid-game with your streak and current letters. Your round clock restarts when you're back; if you're away longer than the round's time, you're out as if time ran out.
+- **Reload or lose signal briefly:** you're put back in your seat automatically (a small "Reconnecting…" banner shows meanwhile), even mid-game with your score and current letters. In Streak your round clock restarts when you're back; if you're away longer than the round's time, you're out as if time ran out. In Sprint the clock is shared and keeps running while you're away, so you come back to the time that's really left.
 - **Seats are kept for 20 seconds.** In the waiting room or on the results screen, a seat that stays empty longer is freed. **Leave room** frees it immediately.
 - **The host can remove players** from the waiting room (the **Remove** link next to their name).
 - **Arriving late:** if the room is full or a game is already running, you watch the live standings instead, and get a seat automatically when the host starts the next game.
@@ -122,7 +129,8 @@ data/                  word lists (the source of truth) + SOURCES.md
 scripts/               helper commands: copy lists to public/, stats, dict:fetch, ...
 src/
   lib/game/            THE GAME RULES. Plain TypeScript, no React, no browser.
-    config.ts            every tunable number (time limits, min word length, ...)
+    config.ts            every tunable number (time limits, sprint length, min word length, ...)
+    modes.ts             the two modes (Streak, Sprint) and the rules that differ between them
     wordLists.ts         turn .txt files into a dictionary + letter-pair index
     letterPicker.ts      choose a fair random letter pair
     validator.ts         accept or reject an answer, and say why

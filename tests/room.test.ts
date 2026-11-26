@@ -2,11 +2,14 @@
 // function, so a whole multiplayer game can be "played" with plain function
 // calls. The server clock is passed in as `now`, so timing is testable too.
 import { describe, expect, it } from "vitest";
+import { SPRINT_SECONDS } from "@/lib/game/config";
+import type { GameMode } from "@/lib/game/modes";
 import { MAX_PLAYERS, RECONNECT_GRACE_MS, TIMEOUT_GRACE_MS } from "@/lib/multiplayer/config";
 import {
   cleanNickname,
   createRoom,
   nextWakeup,
+  placesFor,
   rankPlayers,
   type RoomEvent,
   type RoomPlayer,
@@ -49,7 +52,13 @@ const join = (playerId: string, name = playerId, now = 0): RoomEvent => ({ type:
 const disconnect = (playerId: string, now: number): RoomEvent => ({ type: "disconnect", playerId, now });
 const kick = (playerId: string, targetId: string): RoomEvent => ({ type: "kick", playerId, targetId });
 const leave = (playerId: string): RoomEvent => ({ type: "leave", playerId });
-const start = (playerId: string, now = T0): RoomEvent => ({ type: "start", playerId, timeLimit: 5, seed: "seed-1", now });
+const start = (playerId: string, now = T0, mode: GameMode = 5): RoomEvent => ({
+  type: "start",
+  playerId,
+  mode,
+  seed: "seed-1",
+  now,
+});
 const player = (state: RoomState, id: string): RoomPlayer => state.players.find((p) => p.id === id)!;
 
 /** An answer from `id` for their current pair: a right one (index 0, 1, …) or the given text. */
@@ -114,7 +123,7 @@ describe("leave", () => {
 
 describe("start", () => {
   it("starts everyone on the SAME first pair, with the round clock running", () => {
-    expect(playing).toMatchObject({ phase: "playing", seed: "seed-1", timeLimit: 5 });
+    expect(playing).toMatchObject({ phase: "playing", seed: "seed-1", mode: 5, startedAt: T0 });
     const [a, b] = playing.players;
     expect(a.pair).toEqual(b.pair);
     expect(playing.players.every((p) => p.status === "playing" && p.streak === 0 && p.roundStartedAt === T0)).toBe(
@@ -321,5 +330,74 @@ describe("cleanNickname", () => {
   it("removes control characters and cuts long names", () => {
     expect(cleanNickname("A\u0000nn")).toBe("Ann");
     expect(cleanNickname("x".repeat(40)).length).toBe(16);
+  });
+});
+
+describe("sprint mode (one shared clock, mistakes only warn)", () => {
+  const sprint = apply(twoPlayers, start("a", T0, "sprint"));
+  const SPRINT_END = T0 + SPRINT_SECONDS * 1000 + TIMEOUT_GRACE_MS; // the server's last moment to accept answers
+
+  it("starts with the sprint mode and the shared start time", () => {
+    expect(sprint).toMatchObject({ phase: "playing", mode: "sprint", startedAt: T0 });
+    expect(sprint.players.every((p) => p.status === "playing")).toBe(true);
+  });
+
+  it("a wrong answer is only a warning: nobody is knocked out, nothing changes", () => {
+    for (const wrong of ["zebra", "bite", "aeioue", "ab"]) {
+      expect(apply(sprint, answer(sprint, "a", T0 + 500, wrong))).toEqual(sprint);
+    }
+  });
+
+  it("right answers count and move on to the next shared pair", () => {
+    const one = apply(sprint, answer(sprint, "a", T0 + 1000));
+    expect(player(one, "a")).toMatchObject({ streak: 1, status: "playing" });
+    expect(player(one, "a").pair).not.toEqual(player(sprint, "a").pair);
+  });
+
+  it("the deadline is the same for everyone and doesn't move with right answers", () => {
+    let state = sprint;
+    for (let i = 0; i < 3; i++) state = apply(state, answer(state, "a", T0 + 20_000 + i));
+    expect(nextWakeup(state)).toBe(SPRINT_END);
+  });
+
+  it("an answer after the shared deadline (plus grace) doesn't count", () => {
+    const late = apply(sprint, answer(sprint, "a", SPRINT_END + 1));
+    expect(player(late, "a")).toMatchObject({ streak: 0, status: "out", gameOverReason: "TIMEOUT" });
+    const justInTime = apply(sprint, answer(sprint, "a", SPRINT_END));
+    expect(player(justInTime, "a").streak).toBe(1);
+  });
+
+  it("the server clock ends the sprint for everyone at once", () => {
+    const one = apply(sprint, answer(sprint, "a", T0 + 29_000)); // a late right answer doesn't buy more time
+    expect(apply(one, { type: "tick", now: SPRINT_END })).toEqual(one); // not over yet
+    const over = apply(one, { type: "tick", now: SPRINT_END + 1 });
+    expect(over.players.every((p) => p.status === "out" && p.gameOverReason === "TIMEOUT")).toBe(true);
+    expect(over.phase).toBe("finished");
+  });
+
+  it("coming back after a dropped connection doesn't reset the shared clock", () => {
+    const back = apply(sprint, disconnect("b", T0 + 10_000), join("b", "Bo", T0 + 15_000));
+    expect(player(back, "b").connected).toBe(true);
+    expect(nextWakeup(back)).toBe(SPRINT_END);
+  });
+
+  it("rematch keeps the mode (so the host's picker remembers it) but clears the start time", () => {
+    const over = apply(sprint, { type: "tick", now: SPRINT_END + 1 });
+    const lobby = apply(over, { type: "rematch", playerId: "a" });
+    expect(lobby).toMatchObject({ phase: "lobby", mode: "sprint", startedAt: null });
+  });
+
+  it("equal word counts share the place; Streak keeps breaking ties", () => {
+    const [a, b] = sprint.players;
+    const c = { ...a, id: "c" };
+    const players = [
+      { ...a, streak: 4 },
+      { ...b, streak: 6 },
+      { ...c, streak: 6 },
+    ];
+    const ranked = rankPlayers(players, "sprint");
+    expect(ranked.map((p) => p.id)).toEqual(["b", "c", "a"]);
+    expect(placesFor(ranked, "sprint")).toEqual([1, 1, 3]);
+    expect(placesFor(ranked, 5)).toEqual([1, 2, 3]);
   });
 });

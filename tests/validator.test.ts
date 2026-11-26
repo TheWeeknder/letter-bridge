@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 import {
   explainGameOver,
   explainWarning,
-  isWarningReason,
   REJECTION_MESSAGES,
   validateAnswer,
 } from "@/lib/game/validator";
@@ -111,18 +110,18 @@ describe("REJECTION_MESSAGES / explainGameOver", () => {
   });
 
   it("builds the try-again warnings", () => {
-    expect(explainWarning({ reason: "ALREADY_USED", word: "astute" })).toBe(
+    expect(explainWarning({ reason: "ALREADY_USED", word: "astute" }, AE)).toBe(
       "You already used 'astute'. Try another word!",
     );
-    expect(explainWarning({ reason: "TOO_SHORT", word: "ae" })).toBe("'ae' is too short. Use at least 3 letters!");
+    expect(explainWarning({ reason: "TOO_SHORT", word: "ae" }, AE)).toBe("'ae' is too short. Use at least 3 letters!");
   });
 
-  it("only too-short and repeated words are warnings; the rest end the game", () => {
-    expect(isWarningReason("TOO_SHORT")).toBe(true);
-    expect(isWarningReason("ALREADY_USED")).toBe(true);
-    for (const reason of ["EMPTY", "WRONG_START", "WRONG_END", "NOT_A_WORD"] as const) {
-      expect(isWarningReason(reason)).toBe(false);
-    }
+  it("builds the sprint warnings for wrong words, with the display letters", () => {
+    expect(explainWarning({ reason: "WRONG_START", word: "bite" }, AE)).toBe("'bite' doesn't start with A. Try again!");
+    expect(explainWarning({ reason: "WRONG_END", word: "ants" }, AE)).toBe("'ants' doesn't end with e. Try again!");
+    expect(explainWarning({ reason: "NOT_A_WORD", word: "aeioue" }, AE)).toBe(
+      "'aeioue' isn't in the dictionary. Try another word!",
+    );
   });
 });
 

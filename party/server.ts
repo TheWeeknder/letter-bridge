@@ -10,6 +10,8 @@
 //   - hands every message to the pure room rules (src/lib/multiplayer/room.ts)
 //   - sends the new state to everyone
 //   - keeps a clock running for round deadlines and abandoned seats
+//   - stamps every state message with the server's time, so a player who
+//     reloads mid-sprint can tell how much of the shared clock is left
 // All decisions live in room.ts, where they're unit-tested.
 //
 // URL: wss://<host>/parties/letter-room/<ROOMCODE>?token=…&name=…  (made by partysocket)
@@ -63,7 +65,7 @@ export class LetterRoom extends Server {
     const changed = result.state !== this.room;
     this.room = result.state;
     this.forgetRemovedPlayers();
-    if (changed) this.broadcast(encodeMessage({ type: "state", state: this.room }));
+    if (changed) this.broadcast(encodeMessage({ type: "state", state: this.room, now: Date.now() }));
     this.scheduleClock();
     return true;
   }
@@ -100,7 +102,7 @@ export class LetterRoom extends Server {
 
   /** A browser connected: show it the room, and seat it if it said who it is. */
   onConnect(connection: Connection, ctx: ConnectionContext): void {
-    this.sendTo(connection, { type: "state", state: this.room });
+    this.sendTo(connection, { type: "state", state: this.room, now: Date.now() });
     const identity = parseConnectionQuery(ctx.request.url);
     if (identity) {
       this.connectionTokens.set(connection.id, identity.token);
@@ -121,7 +123,7 @@ export class LetterRoom extends Server {
     switch (message.type) {
       case "start":
         // The seed is chosen HERE, on the server, so every player gets the same one.
-        this.apply({ type: "start", playerId, timeLimit: message.timeLimit, seed: newSeed(), now }, connection);
+        this.apply({ type: "start", playerId, mode: message.mode, seed: newSeed(), now }, connection);
         return;
       case "answer":
         this.apply({ type: "answer", playerId, round: message.round, input: message.input, now }, connection);

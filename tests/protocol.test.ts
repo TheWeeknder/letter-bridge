@@ -11,7 +11,11 @@ import { createRoom } from "@/lib/multiplayer/room";
 describe("parseClientMessage", () => {
   it("accepts well-formed messages", () => {
     expect(parseClientMessage(encodeMessage({ type: "join", name: "Ann" }))).toEqual({ type: "join", name: "Ann" });
-    expect(parseClientMessage(encodeMessage({ type: "start", timeLimit: 5 }))).toEqual({ type: "start", timeLimit: 5 });
+    expect(parseClientMessage(encodeMessage({ type: "start", mode: 5 }))).toEqual({ type: "start", mode: 5 });
+    expect(parseClientMessage(encodeMessage({ type: "start", mode: "sprint" }))).toEqual({
+      type: "start",
+      mode: "sprint",
+    });
     expect(parseClientMessage(encodeMessage({ type: "answer", round: 3, input: "able" }))).toEqual({
       type: "answer",
       round: 3,
@@ -32,7 +36,9 @@ describe("parseClientMessage", () => {
       '{"type":"join"}',
       '{"type":"join","name":7}',
       `{"type":"join","name":"${"x".repeat(500)}"}`,
-      '{"type":"start","timeLimit":4}',
+      '{"type":"start","mode":4}',
+      '{"type":"start","mode":"marathon"}',
+      '{"type":"start","timeLimit":5}',
       '{"type":"answer","round":-1,"input":"able"}',
       '{"type":"answer","round":1.5,"input":"able"}',
       '{"type":"answer","round":1}',
@@ -50,7 +56,11 @@ describe("parseClientMessage", () => {
 describe("parseServerMessage", () => {
   it("reads state and error messages", () => {
     const state = createRoom();
-    expect(parseServerMessage(encodeMessage({ type: "state", state }))).toEqual({ type: "state", state });
+    expect(parseServerMessage(encodeMessage({ type: "state", state, now: 1234 }))).toEqual({
+      type: "state",
+      state,
+      now: 1234,
+    });
     expect(parseServerMessage(encodeMessage({ type: "welcome", playerId: "p1" }))).toEqual({
       type: "welcome",
       playerId: "p1",
@@ -64,6 +74,7 @@ describe("parseServerMessage", () => {
   it("ignores anything else", () => {
     expect(parseServerMessage("garbage")).toBeNull();
     expect(parseServerMessage('{"type":"state"}')).toBeNull();
+    expect(parseServerMessage('{"type":"state","state":{}}')).toBeNull(); // no server time
   });
 });
 

@@ -1,7 +1,7 @@
 // =============================================================================
 // page.tsx — the landing page ("/"): what the game is, and two ways in.
 //
-//   Play solo          -> /solo     (pick a time limit and go)
+//   Play solo          -> /solo     (pick a mode: Streak or Sprint, and go)
 //   Play with friends  -> /friends  (create a room or join one with a code)
 //
 // Nothing here needs the browser, so this page is plain HTML that loads
@@ -20,8 +20,9 @@ export default function Home() {
           subtitle={
             <>
               Type a word that <strong className="text-foreground">starts</strong> with the first letter and{" "}
-              <strong className="text-foreground">ends</strong> with the second, before time runs out. Every correct
-              word adds 1 to your streak.
+              <strong className="text-foreground">ends</strong> with the second, before time runs out. Play a{" "}
+              <strong className="text-foreground">streak</strong> (one mistake ends it) or a 30-second{" "}
+              <strong className="text-foreground">sprint</strong> (as many words as you can).
             </>
           }
         />

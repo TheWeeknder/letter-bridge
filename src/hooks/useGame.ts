@@ -7,7 +7,9 @@
 //   - holds the game state (useReducer + gameReducer)
 //   - picks each round's letter pair from the game's seed (pairForRound)
 //   - checks answers (validateAnswer)
-//   - runs the countdown (useCountdown) and ends the game when it expires
+//   - runs the countdown (useCountdown) and ends the game when it expires:
+//     per word in Streak mode, once for the whole game in Sprint
+//   - decides, per mode, whether a mistake ends the game or just warns
 // Components only call start(), submit(), restart() and read `state`.
 //
 // MULTIPLAYER uses the same hook with a few options (see UseGameOptions):
@@ -17,21 +19,21 @@
 // =============================================================================
 
 import { useCallback, useMemo, useReducer } from "react";
-import type { TimeLimit } from "@/lib/game/config";
 import { getExampleWords } from "@/lib/game/examples";
 import { gameReducer, initialGameState } from "@/lib/game/gameReducer";
+import { type GameMode, warnsInstead } from "@/lib/game/modes";
 import { normalizeWord } from "@/lib/game/normalize";
 import { newSeed, pairForRound } from "@/lib/game/random";
 import type { GameOverReason, GameState, LetterPair, WordData } from "@/lib/game/types";
-import { isWarningReason, validateAnswer } from "@/lib/game/validator";
+import { validateAnswer } from "@/lib/game/validator";
 import { useCountdown } from "./useCountdown";
 
 export interface UseGameResult {
   state: GameState;
   secondsLeft: number; // for the countdown bar / number
-  start: (timeLimit: TimeLimit, seed?: string) => void; // begin a new game (same seed = same pairs)
+  start: (mode: GameMode, seed?: string) => void; // begin a new game (same seed = same pairs)
   submit: (input: string) => void; // the player pressed Enter
-  restart: () => void; // back to the time-limit screen
+  restart: () => void; // back to the mode screen
   forceOver: (reason: GameOverReason, input: string | null) => void; // end the game (the server said so)
   reset: () => void; // forget the game entirely (back to a fresh setup screen)
   exampleWords: string[]; // filled in on the game-over screen
@@ -39,16 +41,17 @@ export interface UseGameResult {
 
 export interface UseGameOptions {
   /**
-   * Start playing straight away with this time limit and seed (multiplayer).
+   * Start playing straight away with this mode and seed (multiplayer).
    * `resume` continues a game already in progress (e.g. after a page reload),
-   * from the streak, words and pair the room server remembered.
+   * from the streak, words and pair the room server remembered. In Sprint,
+   * `secondsLeft` is what's left of the shared clock.
    */
   autoStart?: {
-    timeLimit: TimeLimit;
+    mode: GameMode;
     seed: string;
-    resume?: { streak: number; usedWords: string[]; pair: LetterPair };
+    resume?: { streak: number; usedWords: string[]; pair: LetterPair; secondsLeft?: number };
   };
-  /** Called for every answer that counts: right OR game-ending. `round` = the streak it was for. */
+  /** Called for every answer that counts: right OR game-ending (not warnings). `round` = the streak it was for. */
   onAnswer?: (round: number, input: string) => void;
   /** Called when time runs out on round `round`. */
   onTimeout?: (round: number) => void;
@@ -64,18 +67,26 @@ export function useGame(data: WordData | null, options: UseGameOptions = {}): Us
     if (!autoStart || !data) return initial;
     const started = gameReducer(initial, {
       type: "START",
-      timeLimit: autoStart.timeLimit,
+      mode: autoStart.mode,
       seed: autoStart.seed,
       pair: pairForRound(data.eligiblePairs, autoStart.seed, 0, null),
     });
     const resume = autoStart.resume;
-    return resume ? { ...started, streak: resume.streak, usedWords: resume.usedWords, pair: resume.pair } : started;
+    if (!resume) return started;
+    return {
+      ...started,
+      streak: resume.streak,
+      usedWords: resume.usedWords,
+      pair: resume.pair,
+      timerSeconds: resume.secondsLeft ?? started.timerSeconds,
+    };
   });
 
-  // --- The timer: runs only while playing, restarts every round ------------
+  // --- The timer: runs only while playing, restarts when timerId changes ----
+  // (every new pair in Streak mode; only at the start of the game in Sprint)
   const { secondsLeft, isTimeUp } = useCountdown({
-    seconds: state.timeLimit ?? 0,
-    roundId: state.roundId,
+    seconds: state.timerSeconds,
+    roundId: state.timerId,
     running: state.phase === "playing",
     onExpire: () => {
       onTimeout?.(state.streak);
@@ -89,13 +100,13 @@ export function useGame(data: WordData | null, options: UseGameOptions = {}): Us
    * with the same seed gets the same pairs. Single player leaves it out and
    * gets a fresh random seed each game.
    */
-  function start(timeLimit: TimeLimit, seed: string = newSeed()) {
+  function start(mode: GameMode, seed: string = newSeed()) {
     if (!data) return; // word lists not loaded yet
-    dispatch({ type: "START", timeLimit, seed, pair: pairForRound(data.eligiblePairs, seed, 0, null) });
+    dispatch({ type: "START", mode, seed, pair: pairForRound(data.eligiblePairs, seed, 0, null) });
   }
 
   function submit(input: string) {
-    if (!data || state.phase !== "playing" || !state.pair || state.seed === null) return;
+    if (!data || state.phase !== "playing" || !state.pair || state.seed === null || state.mode === null) return;
 
     // The deadline might have passed since the last screen refresh.
     // Checking here means a late answer can never sneak through.
@@ -112,17 +123,21 @@ export function useGame(data: WordData | null, options: UseGameOptions = {}): Us
       usedWords: state.usedWords,
     });
 
+    // A mistake that only warns in this mode (see modes.ts)?
+    const justWarn = !result.ok && warnsInstead(state.mode, result.reason);
+
     // Tell the room server about every answer that counts (a no-op in solo).
     // Warnings aren't sent: they change nothing, here or on the server.
-    if (result.ok || !isWarningReason(result.reason)) onAnswer?.(state.streak, input);
+    if (!justWarn) onAnswer?.(state.streak, input);
 
     if (result.ok) {
       // The next round is number streak + 1 (randomness stays out of the reducer).
       const nextPair = pairForRound(data.eligiblePairs, state.seed, state.streak + 1, state.pair);
       dispatch({ type: "SUBMIT_CORRECT", word: result.word, nextPair });
-    } else if (isWarningReason(result.reason)) {
-      // Too short or repeated: an honest slip, not a wrong word. Warn and let
-      // the player try again on the same pair (the clock keeps running).
+    } else if (justWarn && result.reason !== "EMPTY") {
+      // Warn and let the player try again on the same pair (the clock keeps
+      // running). In Streak that's only for slips (too short, repeated); in
+      // Sprint it's every mistake.
       dispatch({ type: "WARN", warning: { reason: result.reason, word: normalizeWord(input) } });
     } else {
       dispatch({ type: "FAIL", reason: result.reason, input });

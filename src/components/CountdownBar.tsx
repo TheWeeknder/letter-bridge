@@ -16,6 +16,10 @@
 //   so the bar stays smooth even on slow devices.
 // - `origin-left` makes it shrink towards the left edge instead of the middle.
 //
+// RESUMING: a sprint picked up after a reload has less than the full time
+// left. `total` is the full length, so the bar starts part-empty
+// (seconds / total) and shrinks from there.
+//
 // RED WARNING: in the last 30% of the time the bar turns red. Changing the
 // colour class doesn't restart the animation, because `key` stays the same.
 // =============================================================================
@@ -26,15 +30,18 @@ import { motion } from "motion/react";
 const DANGER_FRACTION = 0.3;
 
 export interface CountdownBarProps {
-  seconds: number; // total length of the countdown
-  roundId: number; // when this changes, the bar resets to full
+  seconds: number; // how long this countdown runs
+  total?: number; // the full length, if more than `seconds` (a resumed sprint); defaults to `seconds`
+  roundId: number; // when this changes, the bar resets
   running: boolean; // false = freeze the bar where it is
   secondsLeft: number; // used to freeze the bar at the right spot when stopped
 }
 
-export function CountdownBar({ seconds, roundId, running, secondsLeft }: CountdownBarProps) {
+export function CountdownBar({ seconds, total = seconds, roundId, running, secondsLeft }: CountdownBarProps) {
   // What fraction of the bar should be filled when it's frozen (0 to 1).
-  const frozenFraction = seconds > 0 ? secondsLeft / seconds : 0;
+  const frozenFraction = total > 0 ? secondsLeft / total : 0;
+  // Where the bar starts: full, or part-empty for a resumed sprint.
+  const startFraction = total > 0 ? Math.min(1, seconds / total) : 0;
   const inDanger = frozenFraction <= DANGER_FRACTION;
 
   return (
@@ -44,7 +51,7 @@ export function CountdownBar({ seconds, roundId, running, secondsLeft }: Countdo
       role="progressbar"
       aria-label="Time left"
       aria-valuemin={0}
-      aria-valuemax={seconds}
+      aria-valuemax={total}
       aria-valuenow={Math.ceil(secondsLeft)}
     >
       <motion.div
@@ -53,7 +60,7 @@ export function CountdownBar({ seconds, roundId, running, secondsLeft }: Countdo
           "h-full origin-left rounded-full transition-colors duration-300 " +
           (inDanger ? "bg-red-500" : "bg-emerald-500")
         }
-        initial={{ scaleX: 1 }}
+        initial={{ scaleX: startFraction }}
         animate={{ scaleX: running ? 0 : frozenFraction }}
         transition={running ? { duration: seconds, ease: "linear" } : { duration: 0 }}
       />

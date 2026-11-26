@@ -15,7 +15,7 @@
 // so seeing someone's id in the room list doesn't let you take their seat.
 // =============================================================================
 
-import { TIME_LIMITS, type TimeLimit } from "../game/config";
+import { type GameMode, isGameMode } from "../game/modes";
 import type { RoomState } from "./room";
 
 /** Browser -> server. */
@@ -23,7 +23,7 @@ export type ClientMessage =
   | { type: "join"; name: string } // join (or try again), or change your nickname
   | { type: "leave" } // leaving on purpose: free my seat now
   | { type: "kick"; playerId: string } // host only: remove a player
-  | { type: "start"; timeLimit: TimeLimit } // host only: begin the game
+  | { type: "start"; mode: GameMode } // host only: begin the game in this mode
   | { type: "answer"; round: number; input: string } // an answer for round `round` (= your streak)
   | { type: "timeout"; round: number } // your timer ran out on round `round`
   | { type: "rematch" }; // host only: back to the lobby for another game
@@ -31,7 +31,7 @@ export type ClientMessage =
 /** Server -> browser. */
 export type ServerMessage =
   | { type: "welcome"; playerId: string } // you have a seat; this is your public id
-  | { type: "state"; state: RoomState } // the whole room, after every change
+  | { type: "state"; state: RoomState; now: number } // the whole room after every change, and the server's clock (ms) when sent
   | { type: "error"; message: string }; // something you asked for was refused
 
 /** Turn a message into text for the WebSocket. */
@@ -50,10 +50,6 @@ function parseJson(raw: unknown): Record<string, unknown> | null {
   }
 }
 
-function isTimeLimit(value: unknown): value is TimeLimit {
-  return TIME_LIMITS.includes(value as TimeLimit);
-}
-
 function isRound(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 0;
 }
@@ -66,7 +62,7 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
     case "join":
       return typeof data.name === "string" && data.name.length <= 200 ? { type: "join", name: data.name } : null;
     case "start":
-      return isTimeLimit(data.timeLimit) ? { type: "start", timeLimit: data.timeLimit } : null;
+      return isGameMode(data.mode) ? { type: "start", mode: data.mode } : null;
     case "answer":
       return isRound(data.round) && typeof data.input === "string" && data.input.length <= 100
         ? { type: "answer", round: data.round, input: data.input }
@@ -93,8 +89,8 @@ export function parseClientMessage(raw: unknown): ClientMessage | null {
 export function parseServerMessage(raw: unknown): ServerMessage | null {
   const data = parseJson(raw);
   if (!data) return null;
-  if (data.type === "state" && typeof data.state === "object" && data.state !== null) {
-    return { type: "state", state: data.state as RoomState };
+  if (data.type === "state" && typeof data.state === "object" && data.state !== null && typeof data.now === "number") {
+    return { type: "state", state: data.state as RoomState, now: data.now };
   }
   if (data.type === "welcome" && typeof data.playerId === "string") {
     return { type: "welcome", playerId: data.playerId };

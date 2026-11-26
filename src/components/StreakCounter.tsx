@@ -1,7 +1,7 @@
 "use client";
 // =============================================================================
-// StreakCounter — shows the current streak, with a little "pop" every time it
-// goes up, and the best streak underneath.
+// StreakCounter — shows the current score (the streak, or in Sprint the words
+// found), with a little "pop" every time it goes up, and the best underneath.
 //
 // HOW THE POP WORKS: `key={streak}` gives the number a new identity every
 // time the streak changes, so React creates a fresh element. Its `initial`
@@ -16,15 +16,16 @@ import { motion, useReducedMotion } from "motion/react";
 
 export interface StreakCounterProps {
   streak: number;
-  best?: number; // best saved streak for this time limit (left out = no "Best" line)
+  best?: number; // best saved score for this mode (left out = no "Best" line)
+  label?: string; // what the number is: "Streak" (default) or "Words"
 }
 
-export function StreakCounter({ streak, best }: StreakCounterProps) {
+export function StreakCounter({ streak, best, label = "Streak" }: StreakCounterProps) {
   const reduceMotion = useReducedMotion();
 
   return (
     <div className="flex flex-col items-center gap-1 text-center">
-      <div className="text-sm text-zinc-500">Streak</div>
+      <div className="text-sm text-zinc-500">{label}</div>
       <motion.div
         key={streak}
         className="text-4xl font-bold tabular-nums"

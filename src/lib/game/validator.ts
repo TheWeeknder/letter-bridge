@@ -16,9 +16,10 @@
 //   6. ALREADY_USED accepted earlier in this streak
 // Order matters when an answer breaks several rules at once: "xyz" for A…e
 // is reported as WRONG_START, the most helpful thing to fix first.
-// The validator only REPORTS the reason. What happens next is the game's
-// choice: TOO_SHORT and ALREADY_USED let the player try again (see
-// isWarningReason and useGame), while every other reason ends the game.
+// The validator only REPORTS the reason. What happens next depends on the
+// mode (see warnsInstead in modes.ts): in Streak, TOO_SHORT and ALREADY_USED
+// let the player try again while anything else ends the game; in Sprint
+// every mistake just warns.
 // Timeouts are NOT handled here. The validator only judges typed answers;
 // the clock is handled by useCountdown and useGame.
 // =============================================================================
@@ -32,7 +33,6 @@ import type {
   RejectionReason,
   ValidationResult,
   Warning,
-  WarningReason,
 } from "./types";
 
 /** Short, general text for each rejection reason. */
@@ -119,22 +119,21 @@ export function explainGameOver(
 }
 
 /**
- * Does this rejection only WARN the player instead of ending the game?
- * Too-short and repeated words are honest slips, not wrong words.
- */
-export function isWarningReason(reason: RejectionReason): reason is WarningReason {
-  return reason === "TOO_SHORT" || reason === "ALREADY_USED";
-}
-
-/**
  * The warning shown under the answer box. These don't end the game, so the
- * text is a nudge to try again rather than a verdict.
+ * text is a nudge to try again rather than a verdict. `pair` is the letters
+ * the player was on, for "doesn't start with A".
  */
-export function explainWarning({ reason, word }: Warning): string {
+export function explainWarning({ reason, word }: Warning, pair: LetterPair): string {
   switch (reason) {
     case "TOO_SHORT":
       return `'${word}' is too short. Use at least ${MIN_WORD_LENGTH} letters!`;
     case "ALREADY_USED":
       return `You already used '${word}'. Try another word!`;
+    case "WRONG_START":
+      return `'${word}' doesn't start with ${displayStart(pair)}. Try again!`;
+    case "WRONG_END":
+      return `'${word}' doesn't end with ${displayEnd(pair)}. Try again!`;
+    case "NOT_A_WORD":
+      return `'${word}' isn't in the dictionary. Try another word!`;
   }
 }

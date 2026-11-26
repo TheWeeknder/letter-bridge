@@ -1,29 +1,29 @@
 "use client";
 // =============================================================================
-// HighScoreBoard — the top scores for one time limit, shown on game over.
+// HighScoreBoard — the top scores for one mode, shown on game over.
 //
 // One quiet card with a row per score: the place, the streak and the words
-// used. The words are cut to one line; each row is a native <details>, so
+// used (in Sprint the score IS the number of words). The words are cut to one line; each row is a native <details>, so
 // tapping it (on a phone) or clicking it opens the full list. The row for the
 // game just played gets an emerald bar on its left edge.
 // =============================================================================
 
-import type { TimeLimit } from "@/lib/game/config";
 import type { HighScoreEntry } from "@/lib/game/highScores";
+import { type GameMode, modeLabel } from "@/lib/game/modes";
 import { SectionHeading } from "./ui";
 
 export interface HighScoreBoardProps {
   board: HighScoreEntry[]; // best first
-  timeLimit: TimeLimit;
+  mode: GameMode;
   highlightIndex: number | null; // the row for this game, if it made the board
 }
 
-export function HighScoreBoard({ board, timeLimit, highlightIndex }: HighScoreBoardProps) {
+export function HighScoreBoard({ board, mode, highlightIndex }: HighScoreBoardProps) {
   if (board.length === 0) return null;
 
   return (
     <section className="flex w-full max-w-xs flex-col gap-2">
-      <SectionHeading>High scores · {timeLimit}s</SectionHeading>
+      <SectionHeading>High scores · {modeLabel(mode)}</SectionHeading>
       <ol className="divide-y divide-zinc-200 overflow-hidden rounded-xl bg-zinc-100 text-left dark:divide-zinc-800 dark:bg-zinc-900">
         {board.map((entry, i) => {
           const highlighted = i === highlightIndex;

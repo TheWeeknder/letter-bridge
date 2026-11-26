@@ -1,16 +1,16 @@
 "use client";
 // =============================================================================
 // Lobby — the waiting room before a game: the code, link and QR code to
-// share, who's here, and (for the host) the time limit, the Start button and
-// removing players.
+// share, who's here, and (for the host) the mode (Streak 10s/5s/3s or the
+// 30s Sprint), the Start button and removing players.
 // =============================================================================
 
 import { useState } from "react";
-import type { TimeLimit } from "@/lib/game/config";
+import type { GameMode } from "@/lib/game/modes";
 import { MAX_PLAYERS, MIN_PLAYERS } from "@/lib/multiplayer/config";
 import type { RoomState } from "@/lib/multiplayer/room";
-import { TimeLimitPicker } from "../TimeLimitPicker";
-import { BackLink, Button, ScreenHeader, SectionHeading } from "../ui";
+import { ModePicker } from "../ModePicker";
+import { BackLink, Button, ScreenHeader } from "../ui";
 import { PlayerList } from "./PlayerList";
 import { RoomQrCode } from "./RoomQrCode";
 
@@ -19,7 +19,7 @@ export interface LobbyProps {
   room: RoomState;
   myId: string;
   error: string | null; // e.g. "You need at least 2 players to start."
-  onStart: (timeLimit: TimeLimit) => void;
+  onStart: (mode: GameMode) => void;
   onChangeName: () => void;
   onKick: (playerId: string) => void; // host only
   onLeave: () => void; // free my seat before going home
@@ -29,7 +29,8 @@ export function Lobby({ code, room, myId, error, onStart, onChangeName, onKick, 
   const isHost = room.hostId === myId;
   const host = room.players.find((p) => p.id === room.hostId);
   const enoughPlayers = room.players.length >= MIN_PLAYERS;
-  const [timeLimit, setTimeLimit] = useState<TimeLimit>(room.timeLimit ?? 10);
+  // Starts on the mode of the last game in this room (a rematch), else 10s.
+  const [mode, setMode] = useState<GameMode>(room.mode ?? 10);
   const [copied, setCopied] = useState(false);
 
   async function copyLink() {
@@ -67,10 +68,9 @@ export function Lobby({ code, room, myId, error, onStart, onChangeName, onKick, 
       </div>
 
       {isHost ? (
-        <div className="flex w-full max-w-xs flex-col items-center gap-3">
-          <SectionHeading>Seconds per word</SectionHeading>
-          <TimeLimitPicker onPick={setTimeLimit} selected={timeLimit} />
-          <Button className="w-full disabled:opacity-40" disabled={!enoughPlayers} onClick={() => onStart(timeLimit)}>
+        <div className="flex w-full max-w-xs flex-col items-center gap-6">
+          <ModePicker onPick={setMode} selected={mode} />
+          <Button className="w-full disabled:opacity-40" disabled={!enoughPlayers} onClick={() => onStart(mode)}>
             Start game
           </Button>
           {!enoughPlayers && <p className="text-sm text-zinc-500">Waiting for at least one more player…</p>}

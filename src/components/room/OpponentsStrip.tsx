@@ -1,10 +1,12 @@
 "use client";
 // =============================================================================
 // OpponentsStrip — the other players' live streaks, shown above your letters
-// while you play. Someone who's out is greyed out with a ✕; someone whose
+// while you play. In Streak, someone who's out is greyed out with a ✕ (in
+// Sprint nobody is knocked out, so the count simply stays). Someone whose
 // connection dropped is faded until they're back.
 // =============================================================================
 
+import { isSprint } from "@/lib/game/modes";
 import type { RoomState } from "@/lib/multiplayer/room";
 
 export function OpponentsStrip({ room, myId }: { room: RoomState; myId: string }) {
@@ -14,7 +16,8 @@ export function OpponentsStrip({ room, myId }: { room: RoomState; myId: string }
   return (
     <ul className="flex flex-wrap justify-center gap-2" aria-label="Other players">
       {opponents.map((p) => {
-        const out = p.status === "out";
+        // A sprint has no knock-outs: someone whose time is up just keeps their count.
+        const out = p.status === "out" && !(room.mode !== null && isSprint(room.mode));
         return (
           <li
             key={p.id}

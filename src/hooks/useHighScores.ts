@@ -15,7 +15,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 import { loadHighScores, saveHighScores, subscribeHighScores } from "@/lib/browser/highScoreStore";
-import type { TimeLimit } from "@/lib/game/config";
+import type { GameMode } from "@/lib/game/modes";
 import { type HighScoreBoards, type HighScoreEntry, emptyBoards, insertScore } from "@/lib/game/highScores";
 
 // One shared object, so the server snapshot is the same on every call.
@@ -26,17 +26,17 @@ function getServerSnapshot(): HighScoreBoards {
 }
 
 export interface UseHighScoresResult {
-  boards: HighScoreBoards; // one top list per time limit, best first
-  save: (timeLimit: TimeLimit, entry: HighScoreEntry) => void; // add a finished game
+  boards: HighScoreBoards; // one top list per game mode, best first
+  save: (mode: GameMode, entry: HighScoreEntry) => void; // add a finished game
 }
 
 export function useHighScores(): UseHighScoresResult {
   const boards = useSyncExternalStore(subscribeHighScores, loadHighScores, getServerSnapshot);
 
-  const save = useCallback((timeLimit: TimeLimit, entry: HighScoreEntry) => {
+  const save = useCallback((mode: GameMode, entry: HighScoreEntry) => {
     // Read the LATEST boards (another tab may have saved since we rendered).
     const current = loadHighScores();
-    saveHighScores({ ...current, [timeLimit]: insertScore(current[timeLimit], entry) });
+    saveHighScores({ ...current, [mode]: insertScore(current[mode], entry) });
   }, []);
 
   return { boards, save };

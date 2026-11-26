@@ -16,9 +16,10 @@
 //                             +---+             +--RESTART--> setup
 //                                                (RESET from anywhere -> setup)
 //                        SUBMIT_CORRECT
-//                   (streak + 1, new pair)
+//                   (streak + 1, new pair;
+//               Streak: fresh timer, Sprint: same clock)
 //                           WARN
-//              (too short / repeated word: same pair,
+//          (a mistake that doesn't end the game: same pair,
 //               same timer, warning shown)
 //
 // Actions that don't make sense in the current phase are IGNORED (the same
@@ -26,17 +27,20 @@
 // after the player already lost. Ignoring it means the first reason sticks.
 // =============================================================================
 
+import { isSprint, modeSeconds } from "./modes";
 import type { GameAction, GameState } from "./types";
 
 /** The state before any game has started. */
 export const initialGameState: GameState = {
   phase: "setup",
-  timeLimit: null,
+  mode: null,
   seed: null,
   pair: null,
   streak: 0,
   usedWords: [],
   roundId: 0,
+  timerId: 0,
+  timerSeconds: 0,
   gameOverReason: null,
   lastInput: null,
   warning: null,
@@ -51,21 +55,26 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return {
         ...state,
         phase: "playing",
-        timeLimit: action.timeLimit,
+        mode: action.mode,
         seed: action.seed,
         pair: action.pair,
         streak: 0,
         usedWords: [],
-        roundId: state.roundId + 1, // new round -> timer restarts
+        roundId: state.roundId + 1, // new round -> fresh answer box
+        timerId: state.timerId + 1, // new game -> the countdown starts from full
+        timerSeconds: modeSeconds(action.mode),
         gameOverReason: null,
         lastInput: null,
         warning: null,
       };
     }
 
-    // --- The player's answer was valid: +1 streak, next pair, fresh timer ---
+    // --- The player's answer was valid: +1 streak, next pair ---------------
+    // Streak mode gives every pair its own fresh timer; Sprint keeps the one
+    // clock running (timerId stays the same, so the countdown doesn't restart).
     case "SUBMIT_CORRECT": {
       if (state.phase !== "playing") return state;
+      const freshTimer = state.mode !== null && !isSprint(state.mode);
       return {
         ...state,
         streak: state.streak + 1,
@@ -74,13 +83,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         usedWords: [...state.usedWords, action.word],
         pair: action.nextPair,
         roundId: state.roundId + 1,
+        timerId: freshTimer ? state.timerId + 1 : state.timerId,
+        timerSeconds: freshTimer && state.mode !== null ? modeSeconds(state.mode) : state.timerSeconds,
         warning: null, // new pair: the old warning no longer applies
       };
     }
 
-    // --- Too short or already used: warn, but keep playing ------------------
-    // Nothing else changes: same pair, same streak, and the SAME roundId, so
-    // the timer keeps running. A slip costs time, but it isn't game over.
+    // --- A mistake that only warns (see warnsInstead in modes.ts) -----------
+    // Nothing else changes: same pair, same streak, the SAME timer, which
+    // keeps running. A slip costs time, but it isn't game over.
     // warningCount always goes up (even for the same word twice) so the
     // screen can tell a NEW warning happened and shake again.
     case "WARN": {
@@ -92,7 +103,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    // --- Wrong answer or time ran out: game over -----------------------------
+    // --- Wrong answer (Streak) or time ran out: game over ---------------------
     case "FAIL": {
       if (state.phase !== "playing") return state;
       return {
@@ -105,18 +116,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
-    // --- Back to the setup screen to choose a different time limit ----------
+    // --- Back to the setup screen to choose a different mode ----------------
     case "RESTART": {
-      // Keep the last time limit so it's pre-selected next time;
+      // Keep the last mode so it's pre-selected next time;
       // everything else goes back to the starting values.
-      return { ...initialGameState, timeLimit: state.timeLimit, roundId: state.roundId };
+      return { ...initialGameState, mode: state.mode, roundId: state.roundId, timerId: state.timerId };
     }
 
     // --- Leave the game completely (e.g. the player went back home) ---------
     case "RESET": {
-      // Like a fresh visit: nothing pre-selected. roundId keeps counting up so
-      // React never mistakes a new round for an old one.
-      return { ...initialGameState, roundId: state.roundId };
+      // Like a fresh visit: nothing pre-selected. roundId and timerId keep
+      // counting up so React never mistakes a new round for an old one.
+      return { ...initialGameState, roundId: state.roundId, timerId: state.timerId };
     }
   }
 }

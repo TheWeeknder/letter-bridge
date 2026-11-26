@@ -1,8 +1,11 @@
 "use client";
 // =============================================================================
-// GameOver — why the game ended, the final streak, the high score board,
-// example words, and two ways to continue: play again with the same time, or
-// go back home (to pick a different time or play with friends).
+// GameOver — why the game ended, the final score, the high score board,
+// example words, and two ways to continue: play again in the same mode, or
+// go back home (to pick a different mode or play with friends).
+//
+// Streak: "Game over" + why (wrong word or time's up) + "Final streak".
+// Sprint: only the clock ends a sprint, so "Time's up!" + "Words found".
 //
 // ANIMATIONS (skipped if the player turned on "reduce motion"):
 // - The reason sentence SHAKES side to side for wrong answers, like a head
@@ -11,8 +14,8 @@
 // =============================================================================
 
 import { motion, useReducedMotion } from "motion/react";
-import type { TimeLimit } from "@/lib/game/config";
 import type { HighScoreEntry } from "@/lib/game/highScores";
+import { type GameMode, isSprint, modeLabel } from "@/lib/game/modes";
 import type { GameOverReason, LetterPair } from "@/lib/game/types";
 import { explainGameOver } from "@/lib/game/validator";
 import { HighScoreBoard } from "./HighScoreBoard";
@@ -21,14 +24,14 @@ import { Button, ScreenHeader } from "./ui";
 
 export interface GameOverProps {
   streak: number;
-  board: HighScoreEntry[]; // this time limit's board, already including this game
+  board: HighScoreEntry[]; // this mode's board, already including this game
   rank: number | null; // this game's place on the board (1 = new best), or null
   reason: GameOverReason;
   lastInput: string | null;
   pair: LetterPair;
-  timeLimit: TimeLimit;
+  mode: GameMode;
   exampleWords: string[];
-  onPlayAgain: () => void; // same time limit, start immediately
+  onPlayAgain: () => void; // same mode, start immediately
   onHome: () => void; // back to the landing page
 }
 
@@ -39,34 +42,38 @@ export function GameOver({
   reason,
   lastInput,
   pair,
-  timeLimit,
+  mode,
   exampleWords,
   onPlayAgain,
   onHome,
 }: GameOverProps) {
   const reduceMotion = useReducedMotion();
   const shouldShake = !reduceMotion && reason !== "TIMEOUT";
+  const sprint = isSprint(mode);
 
   return (
     <section className="flex w-full flex-col items-center gap-8 text-center">
       {/* 1. What happened. The reason shakes for wrong answers. */}
       <ScreenHeader
-        title="Game over"
+        title={sprint ? "Time's up!" : "Game over"}
         subtitle={
-          <motion.span
-            className="inline-block"
-            animate={shouldShake ? { x: SHAKE_X } : undefined}
-            transition={{ duration: SHAKE_DURATION }}
-          >
-            {explainGameOver(reason, lastInput, pair)}
-          </motion.span>
+          // A sprint always ends the same way, so the big number below says it all.
+          sprint ? undefined : (
+            <motion.span
+              className="inline-block"
+              animate={shouldShake ? { x: SHAKE_X } : undefined}
+              transition={{ duration: SHAKE_DURATION }}
+            >
+              {explainGameOver(reason, lastInput, pair)}
+            </motion.span>
+          )
         }
       />
 
       {/* 2. The score: the one big thing on this screen. */}
       <div className="flex flex-col items-center gap-1">
         <div className="text-7xl leading-none font-bold tabular-nums">{streak}</div>
-        <div className="text-sm text-zinc-500">Final streak</div>
+        <div className="text-sm text-zinc-500">{sprint ? "Words found" : "Final streak"}</div>
         {rank !== null ? (
           <motion.div
             className="mt-2 font-bold text-emerald-600 dark:text-emerald-400"
@@ -86,7 +93,7 @@ export function GameOver({
       {/* 3. High scores and 4. words that would have worked */}
       {(board.length > 0 || exampleWords.length > 0) && (
         <div className="flex w-full flex-col items-center gap-4">
-          <HighScoreBoard board={board} timeLimit={timeLimit} highlightIndex={rank === null ? null : rank - 1} />
+          <HighScoreBoard board={board} mode={mode} highlightIndex={rank === null ? null : rank - 1} />
           {exampleWords.length > 0 && (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               You could have tried:{" "}
@@ -103,7 +110,7 @@ export function GameOver({
 
       {/* 5. What next? Stacked full-width buttons are easy to tap on a phone. */}
       <div className="flex w-full max-w-xs flex-col gap-3">
-        <Button onClick={onPlayAgain}>Play again ({timeLimit}s)</Button>
+        <Button onClick={onPlayAgain}>Play again ({modeLabel(mode)})</Button>
         <Button variant="secondary" onClick={onHome}>
           Home
         </Button>

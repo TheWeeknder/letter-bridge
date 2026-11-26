@@ -6,7 +6,7 @@
 // compiler warns us if we misspell one or forget to handle a case.
 // =============================================================================
 
-import type { TimeLimit } from "./config";
+import type { GameMode } from "./modes";
 
 /** The two letters shown to the player. Always stored lowercase internally. */
 export interface LetterPair {
@@ -46,10 +46,12 @@ export type ValidationResult =
   | { ok: false; reason: RejectionReason };
 
 /**
- * Rejections that DON'T end the game. The player sees a warning and tries
- * again on the same pair while the clock keeps running.
+ * Rejections that CAN be just a warning: the player tries again on the same
+ * pair while the clock keeps running. Which ones actually warn depends on the
+ * mode (see warnsInstead in modes.ts): in Streak only TOO_SHORT and
+ * ALREADY_USED, in Sprint all of them.
  */
-export type WarningReason = Extract<RejectionReason, "TOO_SHORT" | "ALREADY_USED">;
+export type WarningReason = Exclude<RejectionReason, "EMPTY">;
 
 /** A warning shown under the answer box: why, and the (cleaned) word typed. */
 export interface Warning {
@@ -66,22 +68,26 @@ export type GamePhase = "setup" | "playing" | "over";
 /** The complete state of one game. The reducer turns (state, action) -> new state. */
 export interface GameState {
   phase: GamePhase;
-  timeLimit: TimeLimit | null;
+  mode: GameMode | null; // Streak (seconds per word) or Sprint (see modes.ts)
   seed: string | null; // decides this game's sequence of pairs (see random.ts)
   pair: LetterPair | null;
   streak: number;
   usedWords: string[]; // words accepted in the current streak
-  roundId: number; // goes up every round so the timer knows to restart
+  roundId: number; // goes up for every new pair (fresh, empty answer box)
+  // The countdown is separate from the round: in Sprint a new pair keeps the
+  // same clock. timerId goes up whenever the countdown should restart.
+  timerId: number;
+  timerSeconds: number; // how long the current countdown runs (less if resumed mid-sprint)
   gameOverReason: GameOverReason | null;
   lastInput: string | null; // what the player typed when they lost (if anything)
-  // A too-short or repeated word doesn't end the game; the player just tries again.
+  // Some mistakes don't end the game; the player just tries again (see modes.ts).
   warning: Warning | null; // the latest warning this round (shown under the box)
   warningCount: number; // goes up on every warning, so the input shakes EVERY time
 }
 
 /** Everything that can happen in the game. */
 export type GameAction =
-  | { type: "START"; timeLimit: TimeLimit; seed: string; pair: LetterPair }
+  | { type: "START"; mode: GameMode; seed: string; pair: LetterPair }
   | { type: "SUBMIT_CORRECT"; word: string; nextPair: LetterPair }
   | { type: "WARN"; warning: Warning }
   | { type: "FAIL"; reason: GameOverReason; input?: string }

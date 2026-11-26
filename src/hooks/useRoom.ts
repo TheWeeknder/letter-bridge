@@ -12,6 +12,10 @@
 // after a reload or a dropped connection the server puts you straight back in
 // your seat. The server answers with "welcome" and your public player id.
 //
+// SERVER CLOCK: every state message carries the server's time. We keep the
+// difference to this device's clock (serverOffset), so a player who reloads
+// mid-sprint can work out how much of the shared 30 seconds is left.
+//
 // WHERE is the server? NEXT_PUBLIC_PARTY_HOST (e.g. letter-bridge-rooms.
 // you.workers.dev) once deployed. Without it, we use port 8787 on the same
 // machine the page came from, which is where `npm run party:dev` listens.
@@ -19,7 +23,7 @@
 
 import usePartySocket from "partysocket/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { TimeLimit } from "@/lib/game/config";
+import type { GameMode } from "@/lib/game/modes";
 import { ROOM_PARTY } from "@/lib/multiplayer/config";
 import { type ClientMessage, encodeMessage, parseServerMessage } from "@/lib/multiplayer/protocol";
 import type { RoomState } from "@/lib/multiplayer/room";
@@ -31,6 +35,15 @@ function partyHost(): string {
   if (process.env.NEXT_PUBLIC_PARTY_HOST) return process.env.NEXT_PUBLIC_PARTY_HOST;
   // During the server render there's no window; the socket only opens in the browser anyway.
   return typeof window === "undefined" ? "localhost:8787" : `${window.location.hostname}:8787`;
+}
+
+/**
+ * How far the server's clock is ahead of this device's (ms), from a message
+ * stamped with the server time. (Called from the message handler; it lives
+ * out here because reading the clock isn't allowed while React renders.)
+ */
+function clockOffset(serverNow: number): number {
+  return serverNow - Date.now();
 }
 
 // Used only if sessionStorage is blocked: a token for this page load.
@@ -56,7 +69,8 @@ export interface UseRoomResult {
   connected: boolean;
   myId: string | null; // my public player id; null until I have a seat
   error: string | null; // the last thing the server refused, e.g. "This room is full"
-  start: (timeLimit: TimeLimit) => void; // host only
+  serverOffset: number; // server clock minus this device's clock (ms), from the latest state message
+  start: (mode: GameMode) => void; // host only
   sendAnswer: (round: number, input: string) => void; // report an answer for round `round`
   sendTimeout: (round: number) => void; // report that time ran out on round `round`
   rematch: () => void; // host only: back to the lobby
@@ -74,6 +88,7 @@ export function useRoom(code: string, nickname: string | null): UseRoomResult {
   const [connected, setConnected] = useState(false);
   const [myId, setMyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [serverOffset, setServerOffset] = useState(0);
 
   // Read at every (re)connect by the query function below, so it always uses
   // the CURRENT nickname (partysocket keeps the first function it was given).
@@ -109,6 +124,7 @@ export function useRoom(code: string, nickname: string | null): UseRoomResult {
             socket.send(encodeMessage({ type: "join", name: nicknameRef.current ?? "" }));
           }
           lastPhaseRef.current = next.phase;
+          setServerOffset(clockOffset(message.now));
           setRoom(next);
           break;
         }
@@ -137,7 +153,7 @@ export function useRoom(code: string, nickname: string | null): UseRoomResult {
     [send],
   );
 
-  const start = useCallback((timeLimit: TimeLimit) => request({ type: "start", timeLimit }), [request]);
+  const start = useCallback((mode: GameMode) => request({ type: "start", mode }), [request]);
   const sendAnswer = useCallback((round: number, input: string) => send({ type: "answer", round, input }), [send]);
   const sendTimeout = useCallback((round: number) => send({ type: "timeout", round }), [send]);
   const rematch = useCallback(() => request({ type: "rematch" }), [request]);
@@ -145,5 +161,5 @@ export function useRoom(code: string, nickname: string | null): UseRoomResult {
   const leave = useCallback(() => send({ type: "leave" }), [send]);
   const kick = useCallback((playerId: string) => request({ type: "kick", playerId }), [request]);
 
-  return { room, connected, myId, error, start, sendAnswer, sendTimeout, rematch, retryJoin, leave, kick };
+  return { room, connected, myId, error, serverOffset, start, sendAnswer, sendTimeout, rematch, retryJoin, leave, kick };
 }

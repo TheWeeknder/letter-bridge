@@ -2,6 +2,7 @@
 // can be "played" with plain function calls, no browser or timer needed.
 import { describe, expect, it } from "vitest";
 import { gameReducer, initialGameState } from "@/lib/game/gameReducer";
+import { SPRINT_SECONDS } from "@/lib/game/config";
 import type { GameAction, GameState, LetterPair } from "@/lib/game/types";
 
 const AE: LetterPair = { start: "a", end: "e" };
@@ -13,13 +14,13 @@ function play(state: GameState, ...actions: GameAction[]): GameState {
   return actions.reduce(gameReducer, state);
 }
 
-const started = play(initialGameState, { type: "START", timeLimit: 5, seed: "s", pair: AE });
+const started = play(initialGameState, { type: "START", mode: 5, seed: "s", pair: AE });
 
 describe("START", () => {
   it("moves from setup to playing with a fresh game", () => {
     expect(started).toMatchObject({
       phase: "playing",
-      timeLimit: 5,
+      mode: 5,
       seed: "s",
       pair: AE,
       streak: 0,
@@ -34,7 +35,7 @@ describe("START", () => {
   });
 
   it("is ignored while already playing", () => {
-    expect(gameReducer(started, { type: "START", timeLimit: 3, seed: "s", pair: TS })).toBe(started);
+    expect(gameReducer(started, { type: "START", mode: 3, seed: "s", pair: TS })).toBe(started);
   });
 });
 
@@ -109,18 +110,18 @@ describe("restarting", () => {
   );
 
   it("START from game over begins a new game with streak 0 and no used words", () => {
-    const again = gameReducer(over, { type: "START", timeLimit: 5, seed: "s", pair: BK });
+    const again = gameReducer(over, { type: "START", mode: 5, seed: "s", pair: BK });
     expect(again).toMatchObject({ phase: "playing", streak: 0, usedWords: [], pair: BK, gameOverReason: null });
     expect(again.roundId).toBeGreaterThan(over.roundId);
   });
 
-  it("RESTART goes back to setup but remembers the time limit", () => {
+  it("RESTART goes back to setup but remembers the mode", () => {
     const setup = gameReducer(over, { type: "RESTART" });
-    expect(setup).toMatchObject({ phase: "setup", timeLimit: 5, streak: 0, usedWords: [], pair: null });
+    expect(setup).toMatchObject({ phase: "setup", mode: 5, streak: 0, usedWords: [], pair: null });
   });
 
   it("a word used in a previous game can be used again (new streak)", () => {
-    const again = gameReducer(over, { type: "START", timeLimit: 5, seed: "s", pair: AE });
+    const again = gameReducer(over, { type: "START", mode: 5, seed: "s", pair: AE });
     expect(again.usedWords).not.toContain("astute");
   });
 });
@@ -167,7 +168,7 @@ describe("WARN (too short or already used: try again)", () => {
 
   it("clears the warning when a new game starts", () => {
     const over = gameReducer(repeated, { type: "FAIL", reason: "TIMEOUT" });
-    const again = gameReducer(over, { type: "START", timeLimit: 5, seed: "s", pair: AE });
+    const again = gameReducer(over, { type: "START", mode: 5, seed: "s", pair: AE });
     expect(again.warning).toBeNull();
   });
 
@@ -182,8 +183,41 @@ describe("RESET (leaving the game, e.g. back to the home page)", () => {
     const over = gameReducer(playing, { type: "FAIL", reason: "TIMEOUT" });
     for (const state of [playing, over]) {
       const reset = gameReducer(state, { type: "RESET" });
-      expect(reset).toEqual({ ...initialGameState, roundId: state.roundId });
-      expect(reset.timeLimit).toBeNull();
+      expect(reset).toEqual({ ...initialGameState, roundId: state.roundId, timerId: state.timerId });
+      expect(reset.mode).toBeNull();
     }
+  });
+});
+
+describe("the countdown: per word in Streak, one clock in Sprint", () => {
+  const sprint = play(initialGameState, { type: "START", mode: "sprint", seed: "s", pair: AE });
+
+  it("START sets the countdown to the mode's length and restarts it", () => {
+    expect(started.timerSeconds).toBe(5);
+    expect(sprint.timerSeconds).toBe(SPRINT_SECONDS);
+    expect(sprint.timerId).toBe(initialGameState.timerId + 1);
+  });
+
+  it("Streak: a right answer gives a fresh timer for the next pair", () => {
+    const next = gameReducer(started, { type: "SUBMIT_CORRECT", word: "astute", nextPair: TS });
+    expect(next.timerId).toBe(started.timerId + 1);
+    expect(next.timerSeconds).toBe(5);
+  });
+
+  it("Sprint: a right answer moves to a new pair but keeps the same clock running", () => {
+    const next = gameReducer(sprint, { type: "SUBMIT_CORRECT", word: "astute", nextPair: TS });
+    expect(next).toMatchObject({ streak: 1, pair: TS, timerId: sprint.timerId, timerSeconds: SPRINT_SECONDS });
+    expect(next.roundId).toBe(sprint.roundId + 1); // fresh answer box for the new pair
+  });
+
+  it("Sprint: a wrong word only warns (same pair, same clock)", () => {
+    const warned = gameReducer(sprint, { type: "WARN", warning: { reason: "NOT_A_WORD", word: "aeioue" } });
+    expect(warned).toMatchObject({ phase: "playing", pair: AE, streak: 0, timerId: sprint.timerId });
+    expect(warned.roundId).toBe(sprint.roundId);
+  });
+
+  it("RESTART keeps the sprint mode selected", () => {
+    const over = gameReducer(sprint, { type: "FAIL", reason: "TIMEOUT" });
+    expect(gameReducer(over, { type: "RESTART" }).mode).toBe("sprint");
   });
 });
