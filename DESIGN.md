@@ -180,8 +180,11 @@ Zilla Slab is a free (SIL Open Font Licence) heavy slab serif, chosen to give th
 **Fixed sizes**
 | Thing | Class | Size |
 |---|---|---|
-| Letter tile (landing example, room code) | `size-tile`, plus `border-2 border-tile-border` | 62×62 |
+| Letter tile (room code) | `size-tile`, plus `border-2 border-tile-border` | 62×62 |
+| Required-letter tile (playing screen, landing example) | `LetterTile accent`: `border-3 border-accent` | 96×96 hero / 62×62 small |
 | Hero letter tile (while playing) | `size-hero-tile text-7xl` | 96×96 |
+
+**Start and end letters share one colour:** both get the emerald outline, matching the wordmark's W and d and the outlined keyboard keys. Position, case and the captions tell them apart; a second hue would read as a status (red = problem). Outline, not fill: a filled green tile reads as "correct", and white on emerald is too low-contrast.
 | Key height | `h-key` | 58px |
 | Button height | `min-h-12` | 48px (keeps the 48px tap target, a little over the reference's 44) |
 

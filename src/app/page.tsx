@@ -18,9 +18,9 @@ export default function Home() {
       <section className="flex w-full flex-col items-center gap-10 text-center">
         {/* The "A … e" idea at a glance, with the same tiles as the game screen. */}
         <div className="flex items-center gap-3" aria-hidden>
-          <LetterTile letter="A" size="small" />
+          <LetterTile letter="A" size="small" accent />
           <span className="text-2xl text-muted">…</span>
-          <LetterTile letter="e" size="small" />
+          <LetterTile letter="e" size="small" accent />
         </div>
 
         <ScreenHeader

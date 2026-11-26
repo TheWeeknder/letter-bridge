@@ -11,8 +11,15 @@
 //   2. Each letter has a small label underneath ("starts with" / "ends with"),
 //      so even without the font you always know which is which.
 //
+// COLOUR: both required letters get the same thick emerald outline, just
+// like the W and d of the "Weld" wordmark and the outlined keys on the
+// on-screen keyboard: the two ends of one word. One colour for both on
+// purpose: position, case and captions already tell them apart, and a
+// second colour (amber, red) would look like a warning.
+//
 // LetterTile is exported too: the landing page uses smaller tiles for its
-// "A … e" example. Tiles are square on purpose (see DESIGN.md).
+// "A … e" example, and the lobby shows the room code in plain tiles.
+// Tiles are square on purpose (see DESIGN.md).
 // =============================================================================
 
 import { displayEnd, displayStart } from "@/lib/game/display";
@@ -28,10 +35,22 @@ const TILE_SIZES = {
   small: "size-tile text-tile",
 } as const;
 
-/** One letter in a square tile with a 2px border. The letter's case is kept as given. */
-export function LetterTile({ letter, size = "hero" }: { letter: string; size?: keyof typeof TILE_SIZES }) {
+/**
+ * One letter in a square tile. The letter's case is kept as given.
+ * accent: a required letter (3px emerald outline); otherwise a plain 2px grey border.
+ */
+export function LetterTile({
+  letter,
+  size = "hero",
+  accent = false,
+}: {
+  letter: string;
+  size?: keyof typeof TILE_SIZES;
+  accent?: boolean;
+}) {
+  const border = accent ? "border-3 border-accent" : "border-2 border-tile-border";
   return (
-    <span className={`flex items-center justify-center border-2 border-tile-border leading-none font-bold ${TILE_SIZES[size]}`}>
+    <span className={`flex items-center justify-center ${border} leading-none font-bold ${TILE_SIZES[size]}`}>
       {letter}
     </span>
   );
@@ -41,7 +60,7 @@ export function LetterTile({ letter, size = "hero" }: { letter: string; size?: k
 function LetterBox({ letter, caption }: { letter: string; caption: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <LetterTile letter={letter} />
+      <LetterTile letter={letter} accent />
       <span className="text-sm text-muted">{caption}</span>
     </div>
   );
