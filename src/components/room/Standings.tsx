@@ -11,7 +11,7 @@
 
 import { isSprint } from "@/lib/game/modes";
 import { placesFor, rankPlayers, type RoomState } from "@/lib/multiplayer/room";
-import { SectionHeading } from "../ui";
+import { LIST_CARD, SectionHeading } from "../ui";
 
 export function Standings({ room, myId, title }: { room: RoomState; myId: string | null; title: string }) {
   const ranked = rankPlayers(room.players, room.mode);
@@ -22,7 +22,7 @@ export function Standings({ room, myId, title }: { room: RoomState; myId: string
   return (
     <section className="flex w-full max-w-xs flex-col gap-2">
       <SectionHeading>{title}</SectionHeading>
-      <ol className="divide-y divide-zinc-200 overflow-hidden rounded-xl bg-zinc-100 text-left dark:divide-zinc-800 dark:bg-zinc-900">
+      <ol className={LIST_CARD}>
         {ranked.map((p, i) => {
           const isWinner = finished && places[i] === 1;
           return (
@@ -31,20 +31,20 @@ export function Standings({ room, myId, title }: { room: RoomState; myId: string
               // Only colour the LEFT border: the top border is the row divider.
               className={
                 "flex items-baseline gap-3 border-l-4 px-3 py-2.5 " +
-                (isWinner ? "border-l-emerald-500" : "border-l-transparent")
+                (isWinner ? "border-l-accent" : "border-l-transparent")
               }
             >
-              <span className="w-5 text-sm text-zinc-500 tabular-nums">{places[i]}</span>
+              <span className="w-5 text-sm text-muted tabular-nums">{places[i]}</span>
               <span className={"min-w-0 flex-1 truncate " + (p.id === myId ? "font-bold" : "")}>
                 {p.name}
-                {p.id === myId && <span className="font-normal text-zinc-500"> (you)</span>}
+                {p.id === myId && <span className="font-normal text-muted"> (you)</span>}
               </span>
               {!p.connected && p.status === "playing" ? (
-                <span className="text-xs text-zinc-500">reconnecting…</span>
+                <span className="text-xs text-muted">reconnecting…</span>
               ) : p.status === "playing" ? (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400">playing</span>
+                <span className="text-xs text-accent-text">playing</span>
               ) : (
-                !finished && <span className="text-xs text-zinc-500">{sprint ? "done" : "out"}</span>
+                !finished && <span className="text-xs text-muted">{sprint ? "done" : "out"}</span>
               )}
               <span className="w-6 text-right font-bold tabular-nums">{p.streak}</span>
             </li>

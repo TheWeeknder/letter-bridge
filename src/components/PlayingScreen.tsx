@@ -43,7 +43,7 @@ export function PlayingScreen({ state, secondsLeft, onSubmit, best, top }: Playi
           running
           secondsLeft={secondsLeft}
         />
-        <span className="text-sm text-zinc-500 tabular-nums">{secondsLeft.toFixed(1)}s</span>
+        <span className="text-sm text-muted tabular-nums">{secondsLeft.toFixed(1)}s</span>
       </div>
       {/* key={roundId}: a fresh, empty, focused input for every new pair */}
       <AnswerInput

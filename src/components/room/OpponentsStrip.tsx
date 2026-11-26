@@ -1,9 +1,9 @@
 "use client";
 // =============================================================================
 // OpponentsStrip — the other players' live streaks, shown above your letters
-// while you play. In Streak, someone who's out is greyed out with a ✕ (in
-// Sprint nobody is knocked out, so the count simply stays). Someone whose
-// connection dropped is faded until they're back.
+// while you play, as small outlined chips. In Streak, someone who's out is
+// greyed out with a ✕ (in Sprint nobody is knocked out, so the count simply
+// stays). Someone whose connection dropped is faded until they're back.
 // =============================================================================
 
 import { isSprint } from "@/lib/game/modes";
@@ -22,8 +22,7 @@ export function OpponentsStrip({ room, myId }: { room: RoomState; myId: string }
           <li
             key={p.id}
             className={
-              "flex items-center gap-2 rounded-full px-3 py-1 text-sm " +
-              (out ? "bg-zinc-100 text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600" : "bg-zinc-100 dark:bg-zinc-900")
+              "flex items-center gap-2 rounded-full border border-line px-3 py-1 text-sm " + (out ? "text-muted" : "")
             }
             aria-label={`${p.name}: streak ${p.streak}${out ? ", out" : ""}${p.connected ? "" : ", reconnecting"}`}
             style={p.connected ? undefined : { opacity: 0.5 }}

@@ -73,10 +73,10 @@ export function GameOver({
       {/* 2. The score: the one big thing on this screen. */}
       <div className="flex flex-col items-center gap-1">
         <div className="text-7xl leading-none font-bold tabular-nums">{streak}</div>
-        <div className="text-sm text-zinc-500">{sprint ? "Words found" : "Final streak"}</div>
+        <div className="text-sm text-muted">{sprint ? "Words found" : "Final streak"}</div>
         {rank !== null ? (
           <motion.div
-            className="mt-2 font-bold text-emerald-600 dark:text-emerald-400"
+            className="mt-2 font-bold text-accent-text"
             initial={reduceMotion ? false : { scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.2 }}
@@ -84,7 +84,7 @@ export function GameOver({
             {rank === 1 ? "New best!" : `New high score! #${rank}`}
           </motion.div>
         ) : (
-          <div className="mt-2 text-sm text-zinc-500 tabular-nums">
+          <div className="mt-2 text-sm text-muted tabular-nums">
             Best: {Math.max(board[0]?.streak ?? 0, streak)}
           </div>
         )}
@@ -95,7 +95,7 @@ export function GameOver({
         <div className="flex w-full flex-col items-center gap-4">
           <HighScoreBoard board={board} mode={mode} highlightIndex={rank === null ? null : rank - 1} />
           {exampleWords.length > 0 && (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm text-muted">
               You could have tried:{" "}
               {exampleWords.map((word, i) => (
                 <span key={word}>

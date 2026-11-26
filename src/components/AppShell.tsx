@@ -1,7 +1,9 @@
 // =============================================================================
-// AppShell — the frame around every screen: the small "Letter Bridge"
-// wordmark at the top (a link home), and the current screen centred below it.
-// Used by the solo game (app/page.tsx) and multiplayer rooms (app/room/…).
+// AppShell — the frame around every screen: a slim bar across the top with
+// the "Letter Bridge" wordmark (a link home) and a thin line under it, and
+// the current screen centred below.
+// Used by the landing page, solo (app/solo) and multiplayer (app/friends,
+// app/room/…).
 // =============================================================================
 
 import Link from "next/link";
@@ -10,17 +12,19 @@ import { APP_NAME } from "@/lib/brand";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-6 pt-6 pb-10">
-      {/* The app's name: a small wordmark at the top, so each screen's own
-          title ("How to play", "Game over") is the clear headline. */}
-      <header className="text-center">
-        <h1 className="text-xl font-bold">
+    <>
+      {/* The app's name, small, so each screen's own title ("How to play",
+          "Game over") is the clear headline. The bar spans the full width. */}
+      <header className="flex h-14 shrink-0 items-center justify-center border-b border-line">
+        <h1 className="font-display text-2xl">
           <Link href="/">{APP_NAME}</Link>
         </h1>
       </header>
 
-      {/* The current screen, centred in the space below the wordmark. */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-8 py-8">{children}</div>
-    </main>
+      {/* The current screen, centred in the space below the bar. */}
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 px-6 py-10">
+        {children}
+      </main>
+    </>
   );
 }

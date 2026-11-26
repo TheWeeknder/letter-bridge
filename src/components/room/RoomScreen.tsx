@@ -70,7 +70,7 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
     );
   }
 
-  if (!room) return <p className="text-zinc-500">Connecting to room {code}…</p>;
+  if (!room) return <p className="text-muted">Connecting to room {code}…</p>;
 
   const banner = !connected && (
     <p role="status" className="rounded-full bg-amber-500/15 px-3 py-1 text-sm text-amber-800 dark:text-amber-300">
@@ -82,7 +82,7 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
 
   // Connected, but no seat: watch instead (room full, game already running, removed…).
   if (!me) {
-    if (!error && connected && room.phase === "lobby") return <p className="text-zinc-500">Joining room {code}…</p>;
+    if (!error && connected && room.phase === "lobby") return <p className="text-muted">Joining room {code}…</p>;
     return (
       <>
         {banner}
@@ -111,7 +111,7 @@ export function RoomScreen({ code: rawCode }: { code: string }) {
 
   // The game is on (or just finished).
   if (wordsError) return <Notice title="Couldn't load the words" message={wordsError} />;
-  if (!data) return <p className="text-zinc-500">Loading word lists…</p>;
+  if (!data) return <p className="text-muted">Loading word lists…</p>;
   return (
     <>
       {banner}

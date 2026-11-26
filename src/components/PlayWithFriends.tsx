@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ROOM_CODE_LENGTH } from "@/lib/multiplayer/config";
 import { isValidRoomCode, newRoomCode, normalizeRoomCode } from "@/lib/multiplayer/roomCode";
-import { Button, SectionHeading } from "./ui";
+import { Button, INPUT_BASE, INPUT_BORDER, SectionHeading } from "./ui";
 
 export function PlayWithFriends() {
   const router = useRouter();
@@ -43,9 +43,9 @@ export function PlayWithFriends() {
             autoCapitalize="characters"
             spellCheck={false}
             enterKeyHint="go"
-            className="min-h-12 w-full min-w-0 rounded-xl border-2 border-zinc-300 bg-transparent px-4 text-center text-lg font-bold tracking-widest uppercase outline-none placeholder:font-normal placeholder:tracking-normal placeholder:normal-case focus:border-emerald-500 dark:border-zinc-700"
+            className={`${INPUT_BASE} ${INPUT_BORDER.normal} text-lg font-bold tracking-widest uppercase placeholder:font-normal placeholder:tracking-normal placeholder:normal-case`}
           />
-          <Button type="submit" variant="secondary" disabled={!canJoin} className="disabled:opacity-40">
+          <Button type="submit" variant="secondary" disabled={!canJoin}>
             Join
           </Button>
         </form>

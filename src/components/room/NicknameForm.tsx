@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { NICKNAME_MAX_LENGTH } from "@/lib/multiplayer/config";
 import { cleanNickname } from "@/lib/multiplayer/room";
-import { Button, ScreenHeader } from "../ui";
+import { Button, INPUT_BASE, INPUT_BORDER, ScreenHeader } from "../ui";
 
 export interface NicknameFormProps {
   code: string;
@@ -37,9 +37,9 @@ export function NicknameForm({ code, initialName, onSubmit }: NicknameFormProps)
           placeholder="Your nickname"
           autoComplete="nickname"
           enterKeyHint="go"
-          className="min-h-12 w-full rounded-xl border-2 border-zinc-300 bg-transparent px-4 text-center text-lg outline-none focus:border-emerald-500 dark:border-zinc-700"
+          className={`${INPUT_BASE} ${INPUT_BORDER.normal} text-lg`}
         />
-        <Button type="submit" disabled={!clean} className="disabled:opacity-40">
+        <Button type="submit" disabled={!clean}>
           Join room
         </Button>
       </form>

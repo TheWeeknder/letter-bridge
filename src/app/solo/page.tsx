@@ -86,8 +86,8 @@ export default function SoloPage() {
   return (
     <AppShell>
       {/* --- Word lists still downloading, or failed --- */}
-      {loading && <p className="text-zinc-500">Loading word lists…</p>}
-      {error && <p className="text-red-600">Could not load the word lists: {error}</p>}
+      {loading && <p className="text-muted">Loading word lists…</p>}
+      {error && <p className="text-danger">Could not load the word lists: {error}</p>}
 
       {/* --- Setup: choose a mode --- */}
       {data && state.phase === "setup" && (

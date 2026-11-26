@@ -9,6 +9,7 @@ import { useState } from "react";
 import type { GameMode } from "@/lib/game/modes";
 import { MAX_PLAYERS, MIN_PLAYERS } from "@/lib/multiplayer/config";
 import type { RoomState } from "@/lib/multiplayer/room";
+import { LetterTile } from "../LetterPair";
 import { ModePicker } from "../ModePicker";
 import { BackLink, Button, ScreenHeader } from "../ui";
 import { PlayerList } from "./PlayerList";
@@ -50,19 +51,23 @@ export function Lobby({ code, room, myId, error, onStart, onChangeName, onKick, 
         subtitle={`Share the code, link or QR code with up to ${MAX_PLAYERS - 1} friends.`}
       />
 
-      <div className="flex w-full max-w-xs flex-col items-center gap-3">
-        <div className="text-4xl font-bold tracking-[0.3em] tabular-nums" aria-label={`Room code ${[...code].join(" ")}`}>
-          {code}
+      <div className="flex w-full flex-col items-center gap-3">
+        {/* The code in letter tiles, like the game's letters. It sits outside
+            the narrower max-w-xs column: five tiles need ~330px. */}
+        <div className="flex gap-1" role="img" aria-label={`Room code ${[...code].join(" ")}`}>
+          {[...code].map((letter, i) => (
+            <LetterTile key={i} letter={letter} size="small" />
+          ))}
         </div>
         <RoomQrCode code={code} />
-        <Button variant="secondary" className="w-full" onClick={copyLink}>
+        <Button variant="secondary" className="w-full max-w-xs" onClick={copyLink}>
           {copied ? "Link copied!" : "Copy invite link"}
         </Button>
       </div>
 
       <div className="flex w-full flex-col items-center gap-2">
         <PlayerList room={room} myId={myId} onKick={isHost ? onKick : undefined} />
-        <button type="button" onClick={onChangeName} className="text-sm text-zinc-500 underline hover:text-foreground">
+        <button type="button" onClick={onChangeName} className="text-sm text-muted underline hover:text-foreground">
           Change my nickname
         </button>
       </div>
@@ -70,16 +75,16 @@ export function Lobby({ code, room, myId, error, onStart, onChangeName, onKick, 
       {isHost ? (
         <div className="flex w-full max-w-xs flex-col items-center gap-6">
           <ModePicker onPick={setMode} selected={mode} />
-          <Button className="w-full disabled:opacity-40" disabled={!enoughPlayers} onClick={() => onStart(mode)}>
+          <Button className="w-full" disabled={!enoughPlayers} onClick={() => onStart(mode)}>
             Start game
           </Button>
-          {!enoughPlayers && <p className="text-sm text-zinc-500">Waiting for at least one more player…</p>}
+          {!enoughPlayers && <p className="text-sm text-muted">Waiting for at least one more player…</p>}
         </div>
       ) : (
-        <p className="text-zinc-500">Waiting for {host?.name ?? "the host"} to start the game…</p>
+        <p className="text-muted">Waiting for {host?.name ?? "the host"} to start the game…</p>
       )}
 
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <BackLink onClick={onLeave}>Leave room</BackLink>
     </section>

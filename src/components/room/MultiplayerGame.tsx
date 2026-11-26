@@ -128,7 +128,9 @@ export function MultiplayerGame({
       ? `${iWon ? "You" : (winner?.name ?? "")} found ${score} ${score === 1 ? "word" : "words"}.`
       : `${iWon ? "You" : (winner?.name ?? "")} reached a streak of ${score}.`;
     if (tie) {
-      const names = winners.map((p) => (p.id === myId ? "You" : p.name));
+      // "You" always comes first ("You and Ann…", never "Ann and You…").
+      const iTied = winners.some((p) => p.id === myId);
+      const names = [...(iTied ? ["You"] : []), ...winners.filter((p) => p.id !== myId).map((p) => p.name)];
       title = "It's a tie!";
       subtitle = `${names.slice(0, -1).join(", ")} and ${names.at(-1)} found ${score} ${score === 1 ? "word" : "words"} each.`;
     }
@@ -138,12 +140,12 @@ export function MultiplayerGame({
         <ScreenHeader title={title} subtitle={subtitle} />
         <Standings room={room} myId={myId} title="Final standings" />
         {/* In a sprint everyone's reason is "time's up", so it isn't worth a line. */}
-        {why && !sprint && <p className="text-sm text-zinc-500 dark:text-zinc-400">You: {why}</p>}
+        {why && !sprint && <p className="text-sm text-muted">You: {why}</p>}
         <div className="flex w-full max-w-xs flex-col gap-3">
           {isHost ? (
             <Button onClick={onRematch}>Rematch</Button>
           ) : (
-            <p className="text-sm text-zinc-500">Waiting for {host?.name ?? "the host"} to start a rematch…</p>
+            <p className="text-sm text-muted">Waiting for {host?.name ?? "the host"} to start a rematch…</p>
           )}
           <LinkButton href="/" variant="secondary" onClick={onLeave}>
             Leave room
@@ -159,11 +161,11 @@ export function MultiplayerGame({
       <ScreenHeader title={sprint ? "Time's up!" : "You're out"} subtitle={sprint ? undefined : (why ?? undefined)} />
       <div className="flex flex-col items-center gap-1">
         <div className="text-7xl leading-none font-bold tabular-nums">{myStreak}</div>
-        <div className="text-sm text-zinc-500">{sprint ? "Your words" : "Your streak"}</div>
+        <div className="text-sm text-muted">{sprint ? "Your words" : "Your streak"}</div>
       </div>
       <Standings room={room} myId={myId} title="Live standings" />
       {game.exampleWords.length > 0 && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm text-muted">
           You could have tried:{" "}
           {game.exampleWords.map((word, i) => (
             <span key={word}>
@@ -173,7 +175,7 @@ export function MultiplayerGame({
           ))}
         </p>
       )}
-      <p className="text-zinc-500">Waiting for the others to finish…</p>
+      <p className="text-muted">Waiting for the others to finish…</p>
       <BackLink onClick={onLeave}>Leave room</BackLink>
     </section>
   );

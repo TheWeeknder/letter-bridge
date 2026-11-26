@@ -16,6 +16,7 @@
 import { useAnimate, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { SHAKE_DURATION, SHAKE_X } from "./shake";
+import { INPUT_BASE, INPUT_BORDER } from "./ui";
 
 export interface AnswerInputProps {
   onSubmit: (text: string) => void;
@@ -71,15 +72,10 @@ export function AnswerInput({ onSubmit, warning = null, shakeKey = 0 }: AnswerIn
         aria-describedby={warning ? "answer-warning" : undefined}
         aria-invalid={warning ? true : undefined}
         placeholder="Type a word, press Enter"
-        className={
-          "w-full rounded-lg border-2 bg-transparent px-4 py-3 text-center text-2xl outline-none " +
-          (warning
-            ? "border-red-500 focus:border-red-500"
-            : "border-zinc-300 focus:border-emerald-500 dark:border-zinc-700")
-        }
+        className={`${INPUT_BASE} py-3 text-2xl ${warning ? INPUT_BORDER.invalid : INPUT_BORDER.normal}`}
       />
       {/* role="status": screen readers announce the warning when it appears. */}
-      <p id="answer-warning" role="status" className="min-h-6 text-red-600 dark:text-red-400">
+      <p id="answer-warning" role="status" className="min-h-6 text-danger">
         {warning}
       </p>
     </form>

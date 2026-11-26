@@ -22,10 +22,10 @@ export function RoomQrCode({ code }: { code: string }) {
 
   return (
     <figure className="flex flex-col items-center gap-2">
-      <div className="rounded-xl bg-white p-3">
+      <div className="rounded-card border border-line bg-white p-3">
         <QRCodeSVG value={url} size={152} level="M" title={`QR code to join room ${code}`} />
       </div>
-      <figcaption className="text-sm text-zinc-500">Scan with a phone camera to join</figcaption>
+      <figcaption className="text-sm text-muted">Scan with a phone camera to join</figcaption>
       {LOCAL_ONLY.has(hostname) && (
         <p className="max-w-xs text-xs text-amber-700 dark:text-amber-400">
           Phones can&apos;t open &ldquo;{hostname}&rdquo;. Run <code>npm run dev:lan</code> and{" "}

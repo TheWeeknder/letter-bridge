@@ -127,18 +127,22 @@ Colours are CSS variables with a light and a dark value, so one class works in b
 |---|---|---|---|
 | `background` → `bg-background` | `#ffffff` | `#121213` | The page |
 | `foreground` → `text-foreground` | `#171717` | `#f8f8f8` | Normal text |
+| `muted` → `text-muted` | `#6b6e70` | `#9a9c9e` | Captions, hints, quiet text (both pass 4.5:1 contrast) |
 | `surface-muted` → `bg-surface-muted` | `#e3e3e1` | `#1a1a1b` | Quiet panels, intro areas |
 | `line` → `border-line` | `#d3d6da` | `#3a3a3c` | Dividers, outlines |
 | `tile-border` → `border-tile-border` | `#d3d6da` | `#3a3a3c` | Empty letter tile |
 | `key` → `bg-key` | `#d3d6da` | `#818384` | On-screen keys, neutral filled tiles |
 | `ink` → `bg-ink` | `#121212` | `#f8f8f8` | Strong pill buttons (flips in dark) |
 | `on-ink` → `text-on-ink` | `#ffffff` | `#121213` | Text on `bg-ink` |
-| `accent` → `bg-accent` | emerald-500 | emerald-500 | Main action, good news |
+| `accent` → `bg-accent` | emerald-500 | emerald-500 | Main action, good news, selected keys |
+| `accent-text` → `text-accent-text` | emerald-700 | emerald-400 | Small green text ("New best!", "Host", "playing") |
+| `danger` → `text-danger`, `bg-danger`, `border-danger` | red-600 | red-400 | Problems only: wrong word, errors, the last 30% of the timer |
 
 **Rules**
 - Emerald is for the main action and good news. Red is only for problems.
-- Muted captions keep using `text-zinc-500` until the restyle replaces them.
+- Don't use `text-accent` for small text: emerald-500 is too light on white. Use `text-accent-text`.
 - Don't add new colours in a component. Add a token here first.
+- The one exception is amber for "heads-up" notes: the reconnecting banner and the localhost tip. These still use Tailwind's amber classes.
 
 ### Fonts
 | Class | Font | Use for |
@@ -152,13 +156,14 @@ Zilla Slab is a free (SIL Open Font Licence) heavy slab serif, chosen to give th
 | Role | Class | Size |
 |---|---|---|
 | Hero number (letters, final score) | `text-7xl font-bold` | 72px |
-| Game name | `font-display text-wordmark` | 44px |
-| Screen title (one per screen) | `font-display text-display` or `text-2xl font-bold` | 28 / 24px |
+| Game name, big | `font-display text-wordmark` | 44px |
+| Game name in the top bar | `font-display text-2xl` | 24px |
+| Screen title (one per screen) | `font-display text-display` (`ScreenHeader`) | 28px |
 | Tile letter | `text-tile font-bold uppercase` | 32px |
 | Key letter | `text-keycap font-bold uppercase` | 20px |
 | Body | `text-base` | 16px |
 | Section heading | `text-sm font-semibold` (sentence case) | 14px |
-| Caption | `text-sm text-zinc-500` / `text-xs` | 14 / 12px |
+| Caption | `text-sm text-muted` / `text-xs` | 14 / 12px |
 
 ### Spacing and sizes
 **Spacing:** use Tailwind's default 4px scale (`gap-1` = 4px, `p-4` = 16px…).
@@ -174,7 +179,8 @@ Zilla Slab is a free (SIL Open Font Licence) heavy slab serif, chosen to give th
 **Fixed sizes**
 | Thing | Class | Size |
 |---|---|---|
-| Letter tile | `size-tile`, plus `border-2 border-tile-border` | 62×62 |
+| Letter tile (landing example, room code) | `size-tile`, plus `border-2 border-tile-border` | 62×62 |
+| Hero letter tile (while playing) | `size-hero-tile text-7xl` | 96×96 |
 | Key height | `h-key` | 58px |
 | Button height | `min-h-12` | 48px (keeps the 48px tap target, a little over the reference's 44) |
 
@@ -189,25 +195,39 @@ Zilla Slab is a free (SIL Open Font Licence) heavy slab serif, chosen to give th
 ### Shadows
 `shadow-card` is for a floating card or dialog only. Everything else stays flat; borders do the separating.
 
+### Ready-made pieces in `src/components/ui.tsx`
+Use these instead of repeating the classes:
+
+| Piece | What it is |
+|---|---|
+| `ScreenHeader` | The one screen title (slab font, `text-display`) plus a `text-muted` subtitle |
+| `SectionHeading` | A `text-sm font-semibold` heading above a list or picker |
+| `Button` / `LinkButton` | Pill buttons (`BUTTON_BASE`). They come with the emerald focus ring, the hover state and a faded disabled state built in |
+| `CHOICE_KEY` + `CHOICE_KEY_STATE` | A grey keyboard-style key you pick from a set (the mode keys). It turns `bg-accent` once selected |
+| `LIST_CARD` | A bordered list card with thin lines between rows (high scores, players, standings) |
+| `INPUT_BASE` + `INPUT_BORDER` | A text box with a 2px tile-style border. The border darkens while you type and turns red after a wrong try |
+| `LetterTile` (in `LetterPair.tsx`) | One letter in a square tile, `hero` or `small` size |
+
 ### Buttons
 | Kind | Classes |
 |---|---|
-| Primary (main action) | `rounded-full bg-accent text-white font-bold min-h-12 px-6` |
-| Strong neutral | `rounded-full bg-ink text-on-ink font-bold min-h-12 px-6` |
-| Secondary | `rounded-full border border-foreground font-bold min-h-12 px-6` |
-| Key | `rounded-key bg-key text-keycap font-bold h-key` |
-
-Every button keeps the emerald focus ring from `BUTTON_BASE` in [`src/components/ui.tsx`](src/components/ui.tsx).
+| Primary (main action) | `Button` → `rounded-full bg-accent text-white` |
+| Secondary | `Button variant="secondary"` → `rounded-full border border-foreground`, with `bg-surface-muted` on hover |
+| Strong neutral (not used yet) | `rounded-full bg-ink text-on-ink` |
+| Choice key | `CHOICE_KEY` → `rounded-key bg-key text-keycap font-bold h-key` |
 
 ### Cards
 | Kind | Classes |
 |---|---|
-| Light card | `rounded-card bg-background p-4` on a `bg-surface-muted` area |
-| Dialog | `rounded-card bg-background shadow-card max-w-modal px-12 pt-10 pb-8`, over a dark backdrop (`bg-black/60`) |
-| Divider inside a card | `border-t border-line` |
+| List card | `LIST_CARD`; the highlighted row gets `border-l-4 border-l-accent` |
+| Chip (opponents while playing) | `rounded-full border border-line px-3 py-1 text-sm` |
+| Dialog (none yet) | `rounded-card bg-background shadow-card max-w-modal px-12 pt-10 pb-8`, over a dark backdrop (`bg-black/60`) |
+| Divider | `border-t border-line` (the top bar uses `border-b border-line`) |
 
 ### Layout
-- One centred column. Content is no wider than `max-w-sm` for text.
+- A full-width top bar (`h-14`, thin line under it) with the game name, from `AppShell`.
+- One centred column below it. Content is no wider than `max-w-sm` for text.
+- Use `max-w-xs` for buttons and lists.
 - `max-w-board` (330px) for a row of tiles.
 - `max-w-keyboard` (500px) for keys.
 - `max-w-modal` (520px) for dialogs.

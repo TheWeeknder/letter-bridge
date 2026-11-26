@@ -9,12 +9,20 @@
 // =============================================================================
 
 import { AppShell } from "@/components/AppShell";
+import { LetterTile } from "@/components/LetterPair";
 import { LinkButton, ScreenHeader } from "@/components/ui";
 
 export default function Home() {
   return (
     <AppShell>
       <section className="flex w-full flex-col items-center gap-10 text-center">
+        {/* The "A … e" idea at a glance, with the same tiles as the game screen. */}
+        <div className="flex items-center gap-3" aria-hidden>
+          <LetterTile letter="A" size="small" />
+          <span className="text-2xl text-muted">…</span>
+          <LetterTile letter="e" size="small" />
+        </div>
+
         <ScreenHeader
           title="How to play"
           subtitle={
@@ -26,13 +34,6 @@ export default function Home() {
             </>
           }
         />
-
-        {/* The "A … e" idea at a glance, in the same style as the game screen. */}
-        <div className="flex items-baseline gap-4 text-6xl font-bold" aria-hidden>
-          <span>A</span>
-          <span className="text-4xl text-zinc-400">…</span>
-          <span>e</span>
-        </div>
 
         <nav className="flex w-full max-w-xs flex-col gap-3" aria-label="Choose a mode">
           <LinkButton href="/solo">Play solo</LinkButton>

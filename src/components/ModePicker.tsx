@@ -15,7 +15,7 @@ import type { ReactNode } from "react";
 import { SPRINT_SECONDS, TIME_LIMITS } from "@/lib/game/config";
 import { type GameMode, isSprint, modeLabel } from "@/lib/game/modes";
 import { TimeLimitPicker } from "./TimeLimitPicker";
-import { BUTTON_BASE, SectionHeading } from "./ui";
+import { CHOICE_KEY, CHOICE_KEY_STATE, SectionHeading } from "./ui";
 
 export interface ModePickerProps {
   onPick: (mode: GameMode) => void;
@@ -29,10 +29,10 @@ function Section({ title, hint, best, children }: { title: string; hint: string;
     <div className="flex flex-col items-center gap-3">
       <div className="flex flex-col items-center gap-0.5">
         <SectionHeading>{title}</SectionHeading>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{hint}</p>
+        <p className="text-sm text-muted">{hint}</p>
       </div>
       {children}
-      {best && <p className="text-sm text-zinc-500 tabular-nums">{best}</p>}
+      {best && <p className="text-sm text-muted tabular-nums">{best}</p>}
     </div>
   );
 }
@@ -64,13 +64,9 @@ export function ModePicker({ onPick, selected = null, bests }: ModePickerProps) 
           type="button"
           onClick={() => onPick("sprint")}
           aria-pressed={sprintSelected}
-          // Same look as the seconds buttons, as wide as all three together.
-          className={
-            `${BUTTON_BASE} w-66 border-2 text-xl ` +
-            (sprintSelected
-              ? "border-emerald-500 bg-emerald-500 text-white"
-              : "border-zinc-300 hover:border-emerald-500 dark:border-zinc-700")
-          }
+          // Same key as the seconds buttons, as wide as all three together
+          // (3 × w-20 + 2 × gap-1.5 = w-63).
+          className={`${CHOICE_KEY} w-63 ${sprintSelected ? CHOICE_KEY_STATE.selected : CHOICE_KEY_STATE.idle}`}
         >
           {modeLabel("sprint")}
         </button>

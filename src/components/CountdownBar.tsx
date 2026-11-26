@@ -47,7 +47,7 @@ export function CountdownBar({ seconds, total = seconds, roundId, running, secon
   return (
     // The grey "track" behind the bar.
     <div
-      className="h-3 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"
+      className="h-3 w-full overflow-hidden rounded-full bg-line"
       role="progressbar"
       aria-label="Time left"
       aria-valuemin={0}
@@ -58,7 +58,7 @@ export function CountdownBar({ seconds, total = seconds, roundId, running, secon
         key={roundId}
         className={
           "h-full origin-left rounded-full transition-colors duration-300 " +
-          (inDanger ? "bg-red-500" : "bg-emerald-500")
+          (inDanger ? "bg-danger" : "bg-accent")
         }
         initial={{ scaleX: startFraction }}
         animate={{ scaleX: running ? 0 : frozenFraction }}

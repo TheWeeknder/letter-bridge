@@ -1,13 +1,16 @@
 // =============================================================================
-// ui.tsx — small building blocks shared by every screen, so headings, buttons
-// and spacing look the same everywhere.
+// ui.tsx — small building blocks shared by every screen, so headings, buttons,
+// cards and inputs look the same everywhere. The look comes from the design
+// tokens in globals.css (see DESIGN.md): flat surfaces, pill buttons, square
+// letter tiles and small rounded keys.
 //
 // The type scale (biggest to smallest):
-//   hero number   text-7xl   the one thing to look at (letters, final streak)
-//   ScreenHeader  text-2xl   one per screen: "How to play", "Game over"
-//   SectionHeading text-sm   semibold, sentence case: "High scores · 10s"
-//   captions      text-sm    muted grey
-// Colour: emerald for the main action and good news, red only for problems.
+//   hero number    text-7xl     the one thing to look at (letters, final score)
+//   ScreenHeader   text-display one per screen, in the slab font: "Game over"
+//   SectionHeading text-sm      semibold, sentence case: "High scores · 10s"
+//   captions       text-sm      text-muted
+// Colour: emerald (accent) for the main action and good news, red (danger)
+// only for problems. Token colours switch for dark mode by themselves.
 // =============================================================================
 
 import Link from "next/link";
@@ -17,25 +20,62 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: ReactNode }) {
   return (
     <header className="flex flex-col items-center gap-2 text-center">
-      <h2 className="text-2xl font-bold">{title}</h2>
-      {subtitle && <p className="max-w-sm text-base text-zinc-500 dark:text-zinc-400">{subtitle}</p>}
+      <h2 className="font-display text-display">{title}</h2>
+      {subtitle && <p className="max-w-sm text-base text-muted">{subtitle}</p>}
     </header>
   );
 }
 
 /** A heading above a group of things on a screen (a list, a picker…). */
 export function SectionHeading({ children }: { children: ReactNode }) {
-  return <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{children}</h3>;
+  return <h3 className="text-sm font-semibold">{children}</h3>;
 }
 
-/** Classes shared by every button shape (also used by the time-limit picker). */
+/** The emerald focus ring every clickable thing shares (keyboard users see it). */
+const FOCUS_RING = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
+/** Classes shared by every pill button. */
 export const BUTTON_BASE =
-  "min-h-12 rounded-xl px-5 py-3 font-bold transition-colors " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500";
+  "min-h-12 rounded-full px-6 py-3 font-bold transition-colors duration-150 ease-snap " +
+  "disabled:cursor-not-allowed disabled:opacity-40 " +
+  FOCUS_RING;
 
 export const BUTTON_VARIANTS = {
-  primary: "bg-emerald-500 text-white hover:bg-emerald-600",
-  secondary: "border-2 border-zinc-300 hover:border-emerald-500 dark:border-zinc-700",
+  // The main action: solid emerald.
+  primary: "bg-accent text-white hover:bg-emerald-600",
+  // The other choices: a thin outline, filled lightly on hover.
+  secondary: "border border-foreground hover:bg-surface-muted",
+} as const;
+
+/**
+ * A "key" you pick from a small set (the mode buttons): grey like an
+ * on-screen keyboard key, emerald once chosen. Pair with CHOICE_KEY_STATE.
+ */
+export const CHOICE_KEY =
+  "flex h-key items-center justify-center rounded-key text-keycap font-bold tabular-nums " +
+  "transition-colors duration-150 ease-snap " +
+  FOCUS_RING;
+
+export const CHOICE_KEY_STATE = {
+  selected: "bg-accent text-white",
+  idle: "bg-key hover:bg-key/70",
+} as const;
+
+/**
+ * A list in a quiet bordered card, one row per item with a thin line between
+ * rows (high scores, players, standings).
+ */
+export const LIST_CARD = "divide-y divide-line overflow-hidden rounded-card border border-line text-left";
+
+/** A text box: a 2px tile-style border that darkens while you type in it. */
+export const INPUT_BASE =
+  "min-h-12 w-full min-w-0 rounded-card border-2 bg-transparent px-4 text-center outline-none " +
+  "transition-colors duration-150 placeholder:text-muted";
+
+/** The border colours for INPUT_BASE: normal, or red after a wrong try. */
+export const INPUT_BORDER = {
+  normal: "border-tile-border focus:border-foreground",
+  invalid: "border-danger",
 } as const;
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -83,7 +123,7 @@ export function BackLink({
   children?: ReactNode;
 }) {
   return (
-    <Link href={href} onClick={onClick} className="text-sm text-zinc-500 underline-offset-4 hover:text-foreground hover:underline">
+    <Link href={href} onClick={onClick} className="text-sm text-muted underline-offset-4 hover:text-foreground hover:underline">
       ← {children}
     </Link>
   );

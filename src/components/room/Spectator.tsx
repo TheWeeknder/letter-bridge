@@ -34,7 +34,7 @@ export function Spectator({ code, room, reason, onRetry }: SpectatorProps) {
           }
         />
         <PlayerList room={room} myId={null} />
-        <Button className="w-full max-w-xs disabled:opacity-40" disabled={full} onClick={onRetry}>
+        <Button className="w-full max-w-xs" disabled={full} onClick={onRetry}>
           {full ? "Waiting for a free seat…" : "Join room"}
         </Button>
         <BackLink>Home</BackLink>

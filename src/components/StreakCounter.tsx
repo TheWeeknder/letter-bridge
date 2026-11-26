@@ -25,7 +25,7 @@ export function StreakCounter({ streak, best, label = "Streak" }: StreakCounterP
 
   return (
     <div className="flex flex-col items-center gap-1 text-center">
-      <div className="text-sm text-zinc-500">{label}</div>
+      <div className="text-sm text-muted">{label}</div>
       <motion.div
         key={streak}
         className="text-4xl font-bold tabular-nums"
@@ -37,7 +37,7 @@ export function StreakCounter({ streak, best, label = "Streak" }: StreakCounterP
       >
         {streak}
       </motion.div>
-      {best !== undefined && <div className="text-sm text-zinc-500 tabular-nums">Best: {Math.max(best, streak)}</div>}
+      {best !== undefined && <div className="text-sm text-muted tabular-nums">Best: {Math.max(best, streak)}</div>}
     </div>
   );
 }

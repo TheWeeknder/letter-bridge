@@ -8,7 +8,7 @@
 
 import { MAX_PLAYERS } from "@/lib/multiplayer/config";
 import type { RoomState } from "@/lib/multiplayer/room";
-import { SectionHeading } from "../ui";
+import { LIST_CARD, SectionHeading } from "../ui";
 
 export interface PlayerListProps {
   room: RoomState;
@@ -22,22 +22,22 @@ export function PlayerList({ room, myId, onKick }: PlayerListProps) {
       <SectionHeading>
         Players ({room.players.length}/{MAX_PLAYERS})
       </SectionHeading>
-      <ul className="divide-y divide-zinc-200 overflow-hidden rounded-xl bg-zinc-100 text-left dark:divide-zinc-800 dark:bg-zinc-900">
+      <ul className={LIST_CARD}>
         {room.players.map((player) => {
           const isMe = player.id === myId;
           return (
             <li key={player.id} className="flex items-center gap-2 px-4 py-2.5">
               <span
                 className={
-                  "min-w-0 flex-1 truncate " + (isMe ? "font-bold " : "") + (player.connected ? "" : "text-zinc-400")
+                  "min-w-0 flex-1 truncate " + (isMe ? "font-bold " : "") + (player.connected ? "" : "text-muted")
                 }
               >
                 {player.name}
-                {isMe && <span className="font-normal text-zinc-500"> (you)</span>}
+                {isMe && <span className="font-normal text-muted"> (you)</span>}
                 {!player.connected && <span className="text-xs font-normal"> reconnecting…</span>}
               </span>
               {player.id === room.hostId && (
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent-text">
                   Host
                 </span>
               )}
@@ -45,7 +45,7 @@ export function PlayerList({ room, myId, onKick }: PlayerListProps) {
                 <button
                   type="button"
                   onClick={() => onKick(player.id)}
-                  className="text-xs text-zinc-500 underline-offset-4 hover:text-red-600 hover:underline"
+                  className="text-xs text-muted underline-offset-4 hover:text-danger hover:underline"
                   aria-label={`Remove ${player.name} from the room`}
                 >
                   Remove

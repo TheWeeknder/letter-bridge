@@ -14,7 +14,7 @@ import { RoomScreen } from "@/components/room/RoomScreen";
 export default function RoomPage({ params }: PageProps<"/room/[code]">) {
   return (
     <AppShell>
-      <Suspense fallback={<p className="text-zinc-500">Loading room…</p>}>
+      <Suspense fallback={<p className="text-muted">Loading room…</p>}>
         {params.then(({ code }) => (
           <RoomScreen code={code} />
         ))}
