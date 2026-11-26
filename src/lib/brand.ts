@@ -16,4 +16,4 @@ export const BRAND_COLOR = "#10b981";
 
 /** Page backgrounds, matching --background in globals.css. */
 export const BACKGROUND_LIGHT = "#ffffff";
-export const BACKGROUND_DARK = "#0a0a0a";
+export const BACKGROUND_DARK = "#121213";

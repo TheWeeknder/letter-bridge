@@ -7,10 +7,11 @@
 // Atkinson Hyperlegible Next was designed by the Braille Institute so that
 // look-alike characters (I / l / 1, O / 0) are always distinct: its "I" has
 // serifs (bars top and bottom) and its "l" has a curved tail.
+// Big headings can use Zilla Slab (`font-display`) instead; see DESIGN.md.
 // =============================================================================
 
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible_Next } from "next/font/google";
+import { Atkinson_Hyperlegible_Next, Zilla_Slab } from "next/font/google";
 import { APP_DESCRIPTION, APP_NAME, BACKGROUND_DARK, BACKGROUND_LIGHT } from "@/lib/brand";
 import "./globals.css";
 
@@ -20,6 +21,14 @@ import "./globals.css";
 const hyperlegible = Atkinson_Hyperlegible_Next({
   variable: "--font-hyperlegible",
   subsets: ["latin"],
+});
+
+// A chunky slab serif for big headings only (Tailwind class `font-display`,
+// see DESIGN.md). Body text and game letters stay in Atkinson.
+const zillaSlab = Zilla_Slab({
+  variable: "--font-zilla-slab",
+  subsets: ["latin"],
+  weight: "700",
 });
 
 // Text for the browser tab, search results and link previews.
@@ -45,7 +54,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${hyperlegible.variable} h-full antialiased`}>
+    <html lang="en" className={`${hyperlegible.variable} ${zillaSlab.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">{children}</body>
     </html>
   );

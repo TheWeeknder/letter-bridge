@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* The app's name: a small wordmark at the top, so each screen's own
           title ("How to play", "Game over") is the clear headline. */}
       <header className="text-center">
-        <h1 className="text-lg font-bold">
+        <h1 className="text-xl font-bold">
           <Link href="/">{APP_NAME}</Link>
         </h1>
       </header>

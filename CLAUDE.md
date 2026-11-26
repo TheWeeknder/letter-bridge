@@ -34,5 +34,6 @@ Letter Bridge: a word game (type a word that starts and ends with the given lett
 
 ## Style
 - Every file starts with a header comment explaining **what** it is and **why**, in plain language a beginner can follow. Match that in new files and keep comments up to date.
+- Design tokens: see DESIGN.md. Use the theme classes from `globals.css` (`bg-ink`, `rounded-card`, `text-tile`…) rather than raw hex or one-off sizes.
 - UI uses the shared pieces in `src/components/ui.tsx` (`ScreenHeader`, `SectionHeading`, `Button`, `LinkButton`, `BackLink`). Type scale: one hero number, one `text-2xl` title per screen, sentence-case `text-sm` section headings. Emerald for the main action and good news, red only for problems. Check light and dark mode at phone width (~390px).
 - Solo and multiplayer share game components (`PlayingScreen`, `useGame`). Don't fork them.

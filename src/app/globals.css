@@ -1,27 +1,91 @@
 /* ==========================================================================
-   globals.css — styles applied to the whole app.
-   "@import tailwindcss" loads Tailwind; @theme connects our fonts/colors
-   to Tailwind class names (e.g. `font-sans`, `bg-background`).
+   globals.css — styles applied to the whole app, and our DESIGN TOKENS.
+   "@import tailwindcss" loads Tailwind; @theme connects our fonts/colors/
+   sizes to Tailwind class names (e.g. `font-sans`, `bg-ink`, `rounded-card`).
+
+   HOW IT FITS TOGETHER (see DESIGN.md for the full spec and the reasons):
+   1. :root holds the raw colours, with a second set for dark mode below.
+   2. @theme inline turns each one into Tailwind classes. Because the colours
+      point at CSS variables, a class like `bg-key` switches automatically
+      between light and dark, with no `dark:` variant needed.
+   Change a value here and every screen that uses the class follows.
    ========================================================================== */
 
 @import "tailwindcss";
 
+/* ---- Light mode colours ------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #ffffff; /* the page */
+  --foreground: #171717; /* normal text */
+  --surface-muted: #e3e3e1; /* quiet panels, e.g. a splash/intro area */
+  --line: #d3d6da; /* dividers and outlines */
+  --tile-border: #d3d6da; /* an empty letter tile's border */
+  --key: #d3d6da; /* on-screen key / neutral filled tile */
+  --ink: #121212; /* strong fill: dark pill buttons */
+  --on-ink: #ffffff; /* text on top of --ink */
+}
+
+/* ---- Dark mode colours (follows the phone/computer setting) ------------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121213;
+    --foreground: #f8f8f8;
+    --surface-muted: #1a1a1b;
+    --line: #3a3a3c;
+    --tile-border: #3a3a3c;
+    --key: #818384;
+    --ink: #f8f8f8; /* in dark mode the strong pill flips to light */
+    --on-ink: #121213;
+  }
 }
 
 @theme inline {
+  /* Colours → bg-*, text-*, border-* … */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* `font-sans` = Atkinson Hyperlegible Next (loaded in layout.tsx) */
-  --font-sans: var(--font-hyperlegible), ui-sans-serif, system-ui, sans-serif;}
+  --color-surface-muted: var(--surface-muted);
+  --color-line: var(--line);
+  --color-tile-border: var(--tile-border);
+  --color-key: var(--key);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  /* Our one accent: main action and good news (red stays for problems). */
+  --color-accent: var(--color-emerald-500);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Fonts (both loaded in layout.tsx).
+     `font-sans`    = Atkinson Hyperlegible Next: body text and letters
+     `font-display` = Zilla Slab bold: big headings only */
+  --font-sans: var(--font-hyperlegible), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-zilla-slab), ui-serif, Georgia, serif;
+
+  /* Extra type sizes → text-wordmark, text-display, text-tile, text-keycap */
+  --text-wordmark: 2.75rem; /* 44px: the game's name on the home screen */
+  --text-wordmark--line-height: 1;
+  --text-display: 1.75rem; /* 28px: a screen title in font-display */
+  --text-display--line-height: 1.15;
+  --text-tile: 2rem; /* 32px: a letter inside a tile */
+  --text-tile--line-height: 1;
+  --text-keycap: 1.25rem; /* 20px: a letter on an on-screen key */
+  --text-keycap--line-height: 1;
+
+  /* Corners → rounded-key, rounded-card (pills use rounded-full) */
+  --radius-key: 4px;
+  --radius-card: 8px;
+
+  /* Fixed sizes → size-tile, h-key, w-key … */
+  --spacing-tile: 62px; /* a letter tile is 62×62 */
+  --spacing-key: 58px; /* an on-screen key is 58 tall */
+
+  /* Column widths → max-w-board, max-w-keyboard, max-w-modal */
+  --container-board: 330px;
+  --container-keyboard: 500px;
+  --container-modal: 520px;
+
+  /* The only shadow: a floating card or dialog → shadow-card */
+  --shadow-card: 0 4px 23px 0 rgb(0 0 0 / 0.2);
+
+  /* Quick and crisp, never floaty → ease-snap */
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
 
 body {
