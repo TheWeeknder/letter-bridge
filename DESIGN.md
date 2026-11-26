@@ -1,12 +1,12 @@
 # DESIGN.md
 
-The visual design spec for Letter Bridge: colours, type, spacing, corners, shadows, buttons, cards, layout and motion.
+The visual design spec for Weld: colours, type, spacing, corners, shadows, buttons, cards, layout and motion.
 
 **Why this file exists:** so every screen is built from the same small set of values. The values are defined once, as Tailwind theme tokens in [`src/app/globals.css`](src/app/globals.css). This file explains what each token is for. When you build a screen, use the theme classes (`bg-ink`, `rounded-card`, `text-tile`…), not raw hex codes or one-off pixel sizes.
 
 The file has two parts:
 1. **Reference observations**: what was measured from the screenshots in `design-ref/`.
-2. **Letter Bridge spec**: the tokens we actually use, and the Tailwind class for each.
+2. **Weld spec**: the tokens we actually use, and the Tailwind class for each.
 
 ---
 
@@ -37,7 +37,7 @@ The file has two parts:
 - its fonts (licensed and proprietary)
 - its logo
 
-Letter Bridge keeps:
+Weld keeps:
 - **emerald** as its single accent colour
 - **Atkinson Hyperlegible** as its body font, because the start letter is shown in uppercase and the end letter in lowercase, so `I` and `l` must never look alike
 
@@ -114,7 +114,7 @@ The overall feel is quick, crisp and never floaty.
 
 ---
 
-## 2. Letter Bridge spec (the tokens)
+## 2. Weld spec (the tokens)
 
 All tokens live in [`src/app/globals.css`](src/app/globals.css).
 
@@ -208,6 +208,7 @@ Use these instead of repeating the classes:
 | `LIST_CARD` | A bordered list card with thin lines between rows (high scores, players, standings) |
 | `INPUT_BASE` + `INPUT_BORDER` | A text box with a 2px tile-style border. The border darkens while you type and turns red after a wrong try |
 | `LetterTile` (in `LetterPair.tsx`) | One letter in a square tile, `hero` or `small` size |
+| `OnScreenKeyboard` | The in-game QWERTY keyboard for touch screens (`bg-key rounded-key`, `h-key`); the current start and end letters get `ring-2 ring-accent` |
 
 ### Buttons
 | Kind | Classes |
@@ -226,6 +227,9 @@ Use these instead of repeating the classes:
 | Divider | `border-t border-line` (the top bar uses `border-b border-line`) |
 
 ### Layout
+- **Short screens:** the `short:` variant (`max-height: 720px`) tightens the playing screen so the on-screen keyboard fits: hero tiles drop to `size-tile`, gaps shrink, keys become `h-11`, and the top bar gets smaller.
+- The page uses `min-h-dvh` (the height you can really see on iPhones) and `viewport-fit=cover`; the keyboard pads itself with `env(safe-area-inset-bottom)`.
+- **Wordmark:** "Weld" in the slab font, with the **W** and **d** in `text-accent` (the bright emerald; fine here because the wordmark is big): the start and end letters, welded into one word.
 - A full-width top bar (`h-16`, thin line under it) with the game name, from `AppShell`.
 - One centred column below it. Content is no wider than `max-w-sm` for text.
 - Use `max-w-xs` for buttons and lists.

@@ -13,6 +13,11 @@
 
 @import "tailwindcss";
 
+/* `short:` = phones with little height to spare (e.g. Safari with its bars
+   showing, or an iPhone SE). The playing screen tightens up so the letters,
+   timer, answer box AND the on-screen keyboard all fit without scrolling. */
+@custom-variant short (@media (max-height: 720px));
+
 /* ---- Light mode colours ------------------------------------------------- */
 :root {
   --background: #ffffff; /* the page */

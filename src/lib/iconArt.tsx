@@ -1,6 +1,7 @@
 // =============================================================================
-// iconArt.tsx — draws the app icon: white "A…e" on a green square, the same
-// "start letter … end letter" idea players see in the game.
+// iconArt.tsx — draws the app icon: white "W…d" on a green square: the
+// first and last letters of "Weld", in the same "start letter … end letter"
+// style players see in the game.
 //
 // WHY code instead of a .png file: Next.js turns this JSX into PNG images at
 // build time (see app/icon.tsx). Changing the colour or letters is a code
@@ -55,11 +56,11 @@ export function renderIcon({ size, maskable = false }: IconArtOptions): ImageRes
           color: "white",
           fontSize,
           fontWeight: 700,
-          // Tighten the spacing so "A…e" reads as one unit.
+          // Tighten the spacing so "W…d" reads as one unit.
           letterSpacing: -fontSize * 0.04,
         }}
       >
-        A…e
+        W…d
       </div>
     ),
     // ImageResponse would otherwise default to 1200x630 (a social preview

@@ -6,7 +6,13 @@
 // hunting for all five. Here it's one edit.
 // =============================================================================
 
-export const APP_NAME = "Letter Bridge";
+export const APP_NAME = "Weld";
+
+/**
+ * The name's first and last letters, highlighted in the wordmark (AppShell):
+ * like the game's start and end letters, they're "welded" into one word.
+ */
+export const APP_NAME_ENDS = { first: "W", middle: "el", last: "d" } as const;
 
 export const APP_DESCRIPTION =
   "Type a word that starts and ends with the given letters before time runs out.";

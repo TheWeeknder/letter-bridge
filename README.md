@@ -1,4 +1,4 @@
-# Letter Bridge
+# Weld
 
 A fast word game. You get a **start letter** and an **end letter**, and you have to type a real word that bridges them before the timer runs out.
 
@@ -14,6 +14,8 @@ The landing page has two buttons: **Play solo** and **Play with friends**.
 
 1. Choose **Play solo**, then pick a mode (see below).
 2. Type a word that **starts** with the first letter and **ends** with the second, then press Enter.
+
+On phones and tablets the game shows its **own keyboard** during play (the keys for the current start and end letters are outlined), so the phone's keyboard never pops up and covers the letters or the timer. Computers just use the real keyboard.
 
 **Streak: seconds per word (10, 5 or 3).** Every word gets a fresh timer. Keep going as long as you can. The game ends when:
 - the word isn't in the dictionary or has the wrong first or last letter, or

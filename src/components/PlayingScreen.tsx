@@ -7,9 +7,15 @@
 // The countdown follows the game's TIMER (timerId / timerSeconds), not the
 // round: in Streak mode every pair gets a fresh bar, in Sprint one bar runs
 // down over the whole game. The answer box still resets for every new pair.
+//
+// LAYOUT: the screen fills the height below the top bar. On phones and
+// tablets the on-screen keyboard (rendered by AnswerInput) sits at the
+// bottom, and the rest is centred in the space above it. On short phones
+// everything tightens up (the `short:` variant in globals.css).
 // =============================================================================
 
 import type { ReactNode } from "react";
+import { useTouchKeyboard } from "@/hooks/useTouchKeyboard";
 import { modeSeconds, wordCountLabel } from "@/lib/game/modes";
 import { scoreFor, wordPoints } from "@/lib/game/scoring";
 import type { GameState } from "@/lib/game/types";
@@ -28,20 +34,25 @@ export interface PlayingScreenProps {
 }
 
 export function PlayingScreen({ state, secondsLeft, onSubmit, best, top }: PlayingScreenProps) {
+  const touch = useTouchKeyboard(); // hooks must run before any early return
   if (!state.pair || !state.mode) return null;
   const pair = state.pair;
   const lastWord = state.usedWords.at(-1);
 
   return (
-    <section className="flex w-full flex-col items-center gap-8">
-      {top}
-      <ScoreCounter
-        points={scoreFor(state.usedWords)}
-        words={state.usedWords.length}
-        wordsText={wordCountLabel(state.mode, state.usedWords.length)}
-        lastWordPoints={lastWord ? wordPoints(lastWord) : undefined}
-        best={best}
-      />
+    // With the keyboard, the first group and the keyboard both have mt-auto, so
+    // the free space is split evenly: the game is centred above the keyboard.
+    <section className={"flex w-full flex-1 flex-col items-center gap-8 short:gap-2 " + (touch ? "" : "justify-center")}>
+      <div className={"flex flex-col items-center gap-3 short:gap-2 " + (touch ? "mt-auto" : "")}>
+        {top}
+        <ScoreCounter
+          points={scoreFor(state.usedWords)}
+          words={state.usedWords.length}
+          wordsText={wordCountLabel(state.mode, state.usedWords.length)}
+          lastWordPoints={lastWord ? wordPoints(lastWord) : undefined}
+          best={best}
+        />
+      </div>
       <LetterPair pair={pair} />
       <div className="flex w-full flex-col items-center gap-1">
         <CountdownBar
@@ -59,6 +70,7 @@ export function PlayingScreen({ state, secondsLeft, onSubmit, best, top }: Playi
         onSubmit={onSubmit}
         warning={state.warning ? explainWarning(state.warning, pair) : null}
         shakeKey={state.warningCount}
+        highlight={[pair.start, pair.end]}
       />
     </section>
   );

@@ -17,6 +17,12 @@ export const MIN_WORDS_PER_PAIR = 15;
 export const MIN_WORD_LENGTH = 3;
 
 /**
+ * The on-screen keyboard stops adding letters past this many. The longest
+ * words in the dictionary are about 28 letters, so no real word is cut off.
+ */
+export const MAX_ANSWER_LENGTH = 30;
+
+/**
  * The time limits (in seconds) the player can choose before a game.
  * Add or remove numbers here and the picker buttons update automatically.
  */

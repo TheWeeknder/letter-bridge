@@ -18,7 +18,7 @@ import { ICONS } from "@/lib/iconArt";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: APP_NAME,
-    short_name: APP_NAME, // "Letter Bridge" is short enough to fit under an icon
+    short_name: APP_NAME, // "Weld" easily fits under a home screen icon
     description: APP_DESCRIPTION,
     start_url: "/",
     display: "standalone",

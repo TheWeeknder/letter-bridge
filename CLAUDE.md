@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Letter Bridge: a word game (type a word that starts and ends with the given letters before the timer runs out). Solo play plus live multiplayer rooms. See README.md for the full overview and folder layout.
+Weld (formerly Letter Bridge): a word game (type a word that starts and ends with the given letters before the timer runs out). Solo play plus live multiplayer rooms. See README.md for the full overview and folder layout.
 
 ## Commands
 - `npm test`: run unit tests. **Never `npx vitest` directly**: on Windows a lowercase drive letter (`c:\…`) makes Vitest crash; `scripts/run-tests.mjs` fixes it. Filter with `npm test -- room`.

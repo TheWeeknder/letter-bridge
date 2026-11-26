@@ -46,6 +46,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Lets the page use the whole screen on iPhones with a home bar; the
+  // on-screen keyboard adds env(safe-area-inset-bottom) so it sits above it.
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: BACKGROUND_LIGHT },
     { media: "(prefers-color-scheme: dark)", color: BACKGROUND_DARK },
@@ -55,7 +58,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${hyperlegible.variable} ${zillaSlab.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-sans">{children}</body>
+      {/* min-h-dvh: the height you can actually SEE (on iPhones 100% would
+          include the part hidden behind Safari's bars). */}
+      <body className="flex min-h-dvh flex-col font-sans">{children}</body>
     </html>
   );
 }

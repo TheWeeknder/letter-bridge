@@ -24,7 +24,7 @@ export interface LetterPairProps {
 
 /** The two tile sizes: "hero" while playing, "small" for examples. */
 const TILE_SIZES = {
-  hero: "size-hero-tile text-7xl",
+  hero: "size-hero-tile text-7xl short:size-tile short:text-5xl",
   small: "size-tile text-tile",
 } as const;
 
@@ -55,8 +55,8 @@ export function LetterPair({ pair }: LetterPairProps) {
     // aria-label gives screen readers a clear sentence instead of "I dot dot dot l".
     <div className="flex items-start gap-4" aria-label={`Starts with ${start}, ends with lowercase ${end}`}>
       <LetterBox letter={start} caption="starts with" />
-      {/* Centred on the tiles (hero tile = 96px tall). */}
-      <span className="flex h-hero-tile items-center text-4xl text-muted" aria-hidden>
+      {/* Centred on the tiles (hero tile = 96px tall, 62px on short screens). */}
+      <span className="flex h-hero-tile items-center text-4xl text-muted short:h-tile short:text-2xl" aria-hidden>
         …
       </span>
       <LetterBox letter={end} caption="ends with" />
