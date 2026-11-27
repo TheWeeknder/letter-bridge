@@ -76,6 +76,8 @@ export function AnswerInput({ onSubmit, warning = null, shakeKey = 0 }: AnswerIn
         aria-describedby={warning ? "answer-warning" : undefined}
         aria-invalid={warning ? true : undefined}
         placeholder="Type a word"
+        // text-2xl = 24px. Keep it 16px or bigger: iPhones zoom the whole page
+        // in when you tap a text box with smaller text.
         className={`${INPUT_BASE} py-3 text-2xl compact:py-1.5 ${warning ? INPUT_BORDER.invalid : INPUT_BORDER.normal}`}
       />
       {/* role="status": screen readers announce the warning when it appears. */}

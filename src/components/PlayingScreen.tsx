@@ -9,10 +9,14 @@
 // down over the whole game. The answer box stays the same for the whole game
 // (it empties itself after each answer; see AnswerInput for why).
 //
-// LAYOUT: on computers everything is centred. On phones (the `compact:`
-// variant in globals.css) it sits at the TOP and tightens up, so the answer
-// box ends above where the phone's keyboard slides in. Otherwise Safari
-// scrolls the page up to show the box and the letters slide out of view.
+// LAYOUT: laid out from the TOP (not centred), right under the "Weld" bar.
+// While you type on a phone, the keyboard takes the bottom half and the page
+// shrinks to the part above it (see AppShell / useVisualViewportHeight), so
+// starting at the top keeps the score, letters and box all visible.
+// On phones (the `compact:` variant in globals.css) everything also
+// tightens up so it fits in that smaller space, and squeezes further
+// when the visible part is tiny (the `tight:` variant, e.g. iPhone SE with
+// the keyboard open).
 // =============================================================================
 
 import type { ReactNode } from "react";
@@ -39,7 +43,7 @@ export function PlayingScreen({ state, secondsLeft, onSubmit, best, top }: Playi
   const lastWord = state.usedWords.at(-1);
 
   return (
-    <section className="flex w-full flex-1 flex-col items-center justify-center gap-8 compact:justify-start compact:gap-3">
+    <section className="flex w-full flex-1 flex-col items-center justify-start gap-8 pt-2 compact:gap-3 compact:pt-0 tight:gap-2">
       <div className="flex flex-col items-center gap-3 compact:gap-2">
         {top}
         <ScoreCounter
@@ -59,7 +63,8 @@ export function PlayingScreen({ state, secondsLeft, onSubmit, best, top }: Playi
           running
           secondsLeft={secondsLeft}
         />
-        <span className="text-sm text-muted tabular-nums">{secondsLeft.toFixed(1)}s</span>
+        {/* Hidden when space is tiny (tight:); the bar still shows the time. */}
+        <span className="text-sm text-muted tabular-nums tight:hidden">{secondsLeft.toFixed(1)}s</span>
       </div>
       <AnswerInput
         onSubmit={onSubmit}

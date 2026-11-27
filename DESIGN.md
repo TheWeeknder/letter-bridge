@@ -230,7 +230,9 @@ Use these instead of repeating the classes:
 
 ### Layout
 - **Phones and short screens:** the `compact:` variant (touch phones up to 767px wide, or any window under 720px tall). While you type, the phone keyboard covers the bottom half, so the playing screen moves to the **top** (`compact:justify-start`) and tightens: hero tiles drop to `size-tile`, gaps shrink, the "Points" label hides and the top bar gets smaller. The answer box then ends above the keyboard, so Safari doesn't scroll the letters out of view.
-- The page uses `min-h-dvh` (the height you can really see on iPhones).
+- **The page never scrolls.** `AppShell`'s outer box is exactly the visible height (`h-[var(--vvh,100dvh)]`, `overflow-hidden`). `useVisualViewportHeight` keeps `--vvh` equal to `window.visualViewport.height`, which shrinks when the phone keyboard opens, and undoes Safari's auto-scroll. The top bar is `shrink-0`; `<main>` is `flex-1 min-h-0 overflow-y-auto`, so a long screen scrolls inside it and the bar stays put. The playing screen is laid out from the top.
+- **Tiny visible height:** the `tight:` variant (the hook sets `data-tight` on `<html>` below 420px visible, e.g. an iPhone SE with the keyboard open) hides the letter captions and the seconds text and shrinks the bar and score further.
+- Text boxes stay at 16px or bigger (`text-lg`, `text-2xl`), or iPhones zoom in when you tap them.
 - **Wordmark:** "Weld" in the slab font, with the **W** and **d** in `text-accent` (the bright emerald; fine here because the wordmark is big): the start and end letters, welded into one word.
 - A full-width top bar (`h-16`, thin line under it) with the game name, from `AppShell`.
 - One centred column below it. Content is no wider than `max-w-sm` for text.

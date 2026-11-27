@@ -60,7 +60,10 @@ function LetterBox({ letter, caption }: { letter: string; caption: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <LetterTile letter={letter} accent />
-      <span className="text-sm text-muted">{caption}</span>
+      {/* Hidden when space is tiny (keyboard open on a small phone). The
+          font and the case still tell the letters apart, and screen
+          readers get the aria-label below either way. */}
+      <span className="text-sm text-muted tight:hidden">{caption}</span>
     </div>
   );
 }

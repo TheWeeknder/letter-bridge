@@ -20,6 +20,12 @@
    scroll the letters out of view. */
 /* Written as a block with two @media rules: the one-line form breaks on the
    comma (Tailwind splits it and glues the second half onto the class name). */
+/* `tight:` = very little screen is visible right now, e.g. an iPhone SE with
+   the keyboard open (~290px). Media queries can't see the keyboard on iPhones,
+   so useVisualViewportHeight puts data-tight on <html> instead, and the
+   playing screen squeezes even further. */
+@custom-variant tight (&:where([data-tight], [data-tight] *));
+
 @custom-variant compact {
   @media (max-height: 720px) {
     @slot;

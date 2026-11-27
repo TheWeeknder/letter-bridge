@@ -12,6 +12,7 @@
 
 import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible_Next, Zilla_Slab } from "next/font/google";
+import { VisualViewportSync } from "@/components/VisualViewportSync";
 import { APP_DESCRIPTION, APP_NAME, BACKGROUND_DARK, BACKGROUND_LIGHT } from "@/lib/brand";
 import "./globals.css";
 
@@ -54,10 +55,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${hyperlegible.variable} ${zillaSlab.variable} h-full antialiased`}>
-      {/* min-h-dvh: the height you can actually SEE (on iPhones 100% would
-          include the part hidden behind Safari's bars). */}
-      <body className="flex min-h-dvh flex-col font-sans">{children}</body>
+    <html lang="en" className={`${hyperlegible.variable} ${zillaSlab.variable} antialiased`}>
+      {/* No height or padding here on purpose: AppShell's outer box sets the
+          page height (the visible screen height), so the page never grows
+          taller than the screen and can't scroll. */}
+      <body className="font-sans">
+        <VisualViewportSync />
+        {children}
+      </body>
     </html>
   );
 }
