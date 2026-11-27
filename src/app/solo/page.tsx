@@ -31,7 +31,7 @@ import { scoreFor } from "@/lib/game/scoring";
 export default function SoloPage() {
   const router = useRouter();
   const { data, loading, error } = useWordData();
-  const { state, secondsLeft, start, submit, reset, exampleWords } = useGame(data);
+  const { state, secondsLeft, startsAt, start, submit, reset, exampleWords } = useGame(data);
 
   // Next.js keeps this page alive (hidden) when you navigate away, so its
   // state would otherwise still be there when you come back: e.g. the old
@@ -100,11 +100,12 @@ export default function SoloPage() {
         </section>
       )}
 
-      {/* --- Playing --- */}
-      {data && state.phase === "playing" && state.mode && (
+      {/* --- The 3 · 2 · 1, then playing (same screen, see PlayingScreen) --- */}
+      {data && (state.phase === "countdown" || state.phase === "playing") && state.mode && (
         <PlayingScreen
           state={state}
           secondsLeft={secondsLeft}
+          countdownEndsAt={startsAt}
           onSubmit={submit}
           best={bestFor(boards, state.mode)}
         />

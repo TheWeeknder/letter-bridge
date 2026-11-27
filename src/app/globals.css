@@ -94,6 +94,8 @@
   /* Extra type sizes → text-wordmark, text-display, text-headline,
      text-section, text-tile, text-keycap. Headlines are big on purpose:
      a chunky slab title should be the first thing you see on a screen. */
+  --text-countdown: 9rem; /* 144px: the full-screen 3 · 2 · 1 before a game */
+  --text-countdown--line-height: 1;
   --text-wordmark: 2.75rem; /* 44px: the game's name, big */
   --text-wordmark--line-height: 1;
   --text-display: 2.5rem; /* 40px: a screen title (ScreenHeader) */
@@ -114,6 +116,7 @@
   /* Fixed sizes → size-tile, size-hero-tile, h-key … */
   --spacing-tile: 62px; /* a letter tile is 62×62 */
   --spacing-hero-tile: 96px; /* the big start/end letter tiles while playing */
+  --spacing-countdown: 9rem; /* the box the 3 · 2 · 1 number sits in (h-countdown) */
   --spacing-key: 58px; /* a keyboard-style key (the mode keys) is 58 tall */
 
   /* Column widths → max-w-board, max-w-modal */

@@ -13,7 +13,8 @@ Every correct word scores **one point per letter** ("soaps" = 5, "superheroes" =
 The landing page has two buttons: **Play solo** and **Play with friends**.
 
 1. Choose **Play solo**, then pick a mode (see below).
-2. Type a word that **starts** with the first letter and **ends** with the second, then press Enter.
+2. A quick **3 · 2 · 1** countdown gives you a moment to get ready (in multiplayer everyone's ends at the same moment). The letters and the clock appear when it's over.
+3. Type a word that **starts** with the first letter and **ends** with the second, then press Enter.
 
 On phones the game sits near the top of the screen while you play, so the letters and the timer stay visible above the phone's keyboard.
 

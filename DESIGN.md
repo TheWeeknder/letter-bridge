@@ -211,6 +211,7 @@ Use these instead of repeating the classes:
 | `LIST_CARD` | A bordered list card with thin lines between rows (high scores, players, standings) |
 | `INPUT_BASE` + `INPUT_BORDER` | A text box with a 2px tile-style border. The border darkens while you type and turns red after a wrong try |
 | `LetterTile` (in `LetterPair.tsx`) | One letter in a square tile, `hero` or `small` size |
+| `StartCountdown` | The full-screen "3 · 2 · 1" before a game: the only thing on screen, "Get ready" above and the mode below. A slab (`font-display`) number in `text-countdown` (144px), `text-accent-text`. The old number shrinks out in 0.15s, then the new one pops in from 1.8× with a spring (a plain swap with reduce motion). The game then fades in. The answer box is already there, hidden (`sr-only`) and locked, so the phone keyboard is up when the game appears |
 
 ### Buttons
 | Kind | Classes |

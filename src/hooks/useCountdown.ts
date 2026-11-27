@@ -50,6 +50,17 @@ export function useCountdown({
 }: UseCountdownOptions): UseCountdownResult {
   const [secondsLeft, setSecondsLeft] = useState(seconds);
 
+  // A NEW timer (roundId changed): show the full time straight away, even
+  // before it starts running (e.g. during the 3 · 2 · 1), instead of the
+  // last game's leftover "0.0s". React allows setting state during render
+  // like this when it only depends on a prop change ("adjusting state when a
+  // prop changes"); it re-renders immediately, before anything is painted.
+  const [timerFor, setTimerFor] = useState(roundId);
+  if (timerFor !== roundId) {
+    setTimerFor(roundId);
+    setSecondsLeft(seconds);
+  }
+
   // The current deadline. A ref (not state) because changing it shouldn't
   // re-render anything; it's just a number we look up.
   const deadlineRef = useRef<number | null>(null);

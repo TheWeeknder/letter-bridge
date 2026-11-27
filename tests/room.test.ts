@@ -2,7 +2,7 @@
 // function, so a whole multiplayer game can be "played" with plain function
 // calls. The server clock is passed in as `now`, so timing is testable too.
 import { describe, expect, it } from "vitest";
-import { SPRINT_SECONDS } from "@/lib/game/config";
+import { SPRINT_SECONDS, START_COUNTDOWN_SECONDS } from "@/lib/game/config";
 import type { GameMode } from "@/lib/game/modes";
 import { MAX_PLAYERS, RECONNECT_GRACE_MS, TIMEOUT_GRACE_MS } from "@/lib/multiplayer/config";
 import {
@@ -47,12 +47,14 @@ function refusal(state: RoomState, event: RoomEvent, words: RoomWords | null = W
   return result.error;
 }
 
-const T0 = 1_000_000; // the server time the game starts
+const T0 = 1_000_000; // the server time PLAY begins (after the 3 · 2 · 1)
+const COUNTDOWN_MS = START_COUNTDOWN_SECONDS * 1000;
 const join = (playerId: string, name = playerId, now = 0): RoomEvent => ({ type: "join", playerId, name, now });
 const disconnect = (playerId: string, now: number): RoomEvent => ({ type: "disconnect", playerId, now });
 const kick = (playerId: string, targetId: string): RoomEvent => ({ type: "kick", playerId, targetId });
 const leave = (playerId: string): RoomEvent => ({ type: "leave", playerId });
-const start = (playerId: string, now = T0, mode: GameMode = 5): RoomEvent => ({
+// The host presses Start COUNTDOWN_MS before T0, so play begins exactly at T0.
+const start = (playerId: string, now = T0 - COUNTDOWN_MS, mode: GameMode = 5): RoomEvent => ({
   type: "start",
   playerId,
   mode,
@@ -145,6 +147,30 @@ describe("start", () => {
 
   it("waits for the dictionary", () => {
     expect(refusal(twoPlayers, start("a"), null)).toMatch(/dictionary/);
+  });
+});
+
+describe("the 3 · 2 · 1 before play", () => {
+  const pressedAt = T0 - COUNTDOWN_MS; // when the host pressed Start
+
+  it("play (and everyone's first round clock) begins START_COUNTDOWN_SECONDS after Start", () => {
+    expect(playing.startedAt).toBe(pressedAt + COUNTDOWN_MS);
+    expect(playing.players.every((p) => p.roundStartedAt === pressedAt + COUNTDOWN_MS)).toBe(true);
+  });
+
+  it("an answer sent during the countdown is ignored (nothing changes)", () => {
+    expect(apply(playing, answer(playing, "a", T0 - 1))).toEqual(playing);
+  });
+
+  it("the countdown doesn't eat into the time: the first deadline counts from the end of it", () => {
+    expect(nextWakeup(playing)).toBe(T0 + 5 * 1000 + TIMEOUT_GRACE_MS);
+    // The server clock ticking during the countdown knocks nobody out.
+    expect(apply(playing, { type: "tick", now: T0 - 1 }).players.every((p) => p.status === "playing")).toBe(true);
+  });
+
+  it("coming back DURING the countdown doesn't start your clock early", () => {
+    const back = apply(playing, disconnect("b", pressedAt + 500), join("b", "b", pressedAt + 1000));
+    expect(player(back, "b").roundStartedAt).toBe(T0);
   });
 });
 
@@ -335,7 +361,7 @@ describe("cleanNickname", () => {
 });
 
 describe("sprint mode (one shared clock, mistakes only warn)", () => {
-  const sprint = apply(twoPlayers, start("a", T0, "sprint"));
+  const sprint = apply(twoPlayers, start("a", T0 - COUNTDOWN_MS, "sprint"));
   const SPRINT_END = T0 + SPRINT_SECONDS * 1000 + TIMEOUT_GRACE_MS; // the server's last moment to accept answers
 
   it("starts with the sprint mode and the shared start time", () => {

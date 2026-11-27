@@ -23,6 +23,13 @@ export const MIN_WORD_LENGTH = 3;
 export const MAX_ANSWER_LENGTH = 30;
 
 /**
+ * How long the "3 · 2 · 1" countdown before every game lasts, in seconds.
+ * Solo, the countdown screen and the room server all use this one number,
+ * so multiplayer players all start at the same moment.
+ */
+export const START_COUNTDOWN_SECONDS = 3;
+
+/**
  * The time limits (in seconds) the player can choose before a game.
  * Add or remove numbers here and the picker buttons update automatically.
  */

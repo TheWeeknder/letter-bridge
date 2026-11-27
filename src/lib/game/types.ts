@@ -62,8 +62,11 @@ export interface Warning {
 /** Why a game ended: a rejected answer, or the clock ran out. */
 export type GameOverReason = RejectionReason | "TIMEOUT";
 
-/** The three screens / phases of the game. */
-export type GamePhase = "setup" | "playing" | "over";
+/**
+ * The phases of the game. "countdown" = the 3 · 2 · 1 before a game: the pair
+ * is already chosen but hidden, and the clock hasn't started yet.
+ */
+export type GamePhase = "setup" | "countdown" | "playing" | "over";
 
 /** The complete state of one game. The reducer turns (state, action) -> new state. */
 export interface GameState {
@@ -87,7 +90,8 @@ export interface GameState {
 
 /** Everything that can happen in the game. */
 export type GameAction =
-  | { type: "START"; mode: GameMode; seed: string; pair: LetterPair }
+  | { type: "START"; mode: GameMode; seed: string; pair: LetterPair } // -> countdown
+  | { type: "GO" } // the countdown is over: countdown -> playing
   | { type: "SUBMIT_CORRECT"; word: string; nextPair: LetterPair }
   | { type: "WARN"; warning: Warning }
   | { type: "FAIL"; reason: GameOverReason; input?: string }

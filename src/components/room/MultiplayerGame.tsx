@@ -11,13 +11,16 @@
 //   if it knocks you out (e.g. your answer arrived too late), your screen
 //   follows.
 // - Everyone's game uses the room's seed, so you all get the same pairs.
+// - The 3 · 2 · 1: the room server sets startedAt a few seconds after the
+//   host presses Start. We convert it to this device's clock (serverOffset)
+//   and count down to it, so everyone's letters appear at the same moment.
 // - Sprint: the clock is shared. We work out how much of it is left from the
 //   server's start time and clock (serverOffset), so a reload mid-sprint
 //   picks up with the time that's really left, not a fresh 30 seconds.
 //
 // The parent renders this with key={seed}, so every new game starts fresh.
 //
-// Screens:  playing -> "You're out" / "Time's up" (others still going) -> results
+// Screens:  3 · 2 · 1 -> playing -> "You're out" / "Time's up" (others still going) -> results
 // Results: the winner (most points: one per letter of every accepted word),
 // or "It's a tie!" when a sprint ends with equal points.
 // =============================================================================
@@ -80,6 +83,8 @@ export function MultiplayerGame({
               me && me.pair && (sprint || me.streak > 0 || me.usedWords.length > 0)
                 ? { streak: me.streak, usedWords: me.usedWords, pair: me.pair, secondsLeft: sprintSecondsLeft }
                 : undefined,
+            // The server's start moment, on this device's clock.
+            startsAt: room.startedAt !== null ? room.startedAt - serverOffset : undefined,
           }
         : undefined,
     onAnswer: sendAnswer,
@@ -88,17 +93,19 @@ export function MultiplayerGame({
   const { state, forceOver } = game;
 
   // The server's word is final: if it says we're out, end our local game too.
-  const serverSaysOut = me?.status === "out" && state.phase === "playing";
+  const inGame = state.phase === "countdown" || state.phase === "playing";
+  const serverSaysOut = me?.status === "out" && inGame;
   useEffect(() => {
     if (serverSaysOut && me?.gameOverReason) forceOver(me.gameOverReason, me.lastInput);
   }, [serverSaysOut, me?.gameOverReason, me?.lastInput, forceOver]);
 
   // --- Still playing ---------------------------------------------------------
-  if (state.phase === "playing" && room.phase === "playing") {
+  if (inGame && room.phase === "playing") {
     return (
       <PlayingScreen
         state={state}
         secondsLeft={game.secondsLeft}
+        countdownEndsAt={game.startsAt}
         onSubmit={game.submit}
         top={<OpponentsStrip room={room} myId={myId} />}
       />

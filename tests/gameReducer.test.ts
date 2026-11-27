@@ -14,12 +14,14 @@ function play(state: GameState, ...actions: GameAction[]): GameState {
   return actions.reduce(gameReducer, state);
 }
 
-const started = play(initialGameState, { type: "START", mode: 5, seed: "s", pair: AE });
+// START begins the 3 · 2 · 1; GO (sent by the hook when it's over) starts play.
+const counting = play(initialGameState, { type: "START", mode: 5, seed: "s", pair: AE });
+const started = gameReducer(counting, { type: "GO" });
 
 describe("START", () => {
-  it("moves from setup to playing with a fresh game", () => {
-    expect(started).toMatchObject({
-      phase: "playing",
+  it("moves from setup to the countdown with a fresh game (pair chosen, not playing yet)", () => {
+    expect(counting).toMatchObject({
+      phase: "countdown",
       mode: 5,
       seed: "s",
       pair: AE,
@@ -36,6 +38,33 @@ describe("START", () => {
 
   it("is ignored while already playing", () => {
     expect(gameReducer(started, { type: "START", mode: 3, seed: "s", pair: TS })).toBe(started);
+  });
+
+  it("is ignored while counting down", () => {
+    expect(gameReducer(counting, { type: "START", mode: 3, seed: "s", pair: TS })).toBe(counting);
+  });
+});
+
+describe("the 3 · 2 · 1 before a game (countdown phase)", () => {
+  it("GO moves from the countdown to playing, keeping the pair, mode and clock", () => {
+    expect(started).toMatchObject({ phase: "playing", pair: AE, mode: 5, timerSeconds: 5, timerId: counting.timerId });
+  });
+
+  it("nothing can be answered during the countdown: right, warn and fail are all ignored", () => {
+    expect(gameReducer(counting, { type: "SUBMIT_CORRECT", word: "astute", nextPair: TS })).toBe(counting);
+    expect(gameReducer(counting, { type: "WARN", warning: { reason: "TOO_SHORT", word: "ae" } })).toBe(counting);
+    expect(gameReducer(counting, { type: "FAIL", reason: "TIMEOUT" })).toBe(counting);
+  });
+
+  it("GO is ignored outside the countdown (setup, playing, over)", () => {
+    const over = gameReducer(started, { type: "FAIL", reason: "TIMEOUT" });
+    for (const state of [initialGameState, started, over]) {
+      expect(gameReducer(state, { type: "GO" })).toBe(state);
+    }
+  });
+
+  it("RESET during the countdown goes back to setup", () => {
+    expect(gameReducer(counting, { type: "RESET" }).phase).toBe("setup");
   });
 });
 
@@ -111,7 +140,7 @@ describe("restarting", () => {
 
   it("START from game over begins a new game with streak 0 and no used words", () => {
     const again = gameReducer(over, { type: "START", mode: 5, seed: "s", pair: BK });
-    expect(again).toMatchObject({ phase: "playing", streak: 0, usedWords: [], pair: BK, gameOverReason: null });
+    expect(again).toMatchObject({ phase: "countdown", streak: 0, usedWords: [], pair: BK, gameOverReason: null });
     expect(again.roundId).toBeGreaterThan(over.roundId);
   });
 
@@ -190,7 +219,7 @@ describe("RESET (leaving the game, e.g. back to the home page)", () => {
 });
 
 describe("the countdown: per word in Streak, one clock in Sprint", () => {
-  const sprint = play(initialGameState, { type: "START", mode: "sprint", seed: "s", pair: AE });
+  const sprint = play(initialGameState, { type: "START", mode: "sprint", seed: "s", pair: AE }, { type: "GO" });
 
   it("START sets the countdown to the mode's length and restarts it", () => {
     expect(started.timerSeconds).toBe(5);

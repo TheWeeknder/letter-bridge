@@ -9,6 +9,10 @@
 // NOT swap in a new box for each pair: on iPhones, removing the box that has
 // focus closes the keyboard, so it would drop after every correct word.
 //
+// LOCKED: during the 3 · 2 · 1 the box is already there (invisible, so the
+// phone keyboard can open early) but ignores typing and Enter. It is NOT
+// `disabled`: a disabled box loses focus, which would close the keyboard.
+//
 // WARNINGS: if the player types a word that's too short or already used,
 // the game doesn't end. Instead the parent passes a `warning` and a new `shakeKey`:
 //   - the box shakes (like a head shaking "no") and turns red
@@ -26,9 +30,10 @@ export interface AnswerInputProps {
   onSubmit: (text: string) => void;
   warning?: string | null; // e.g. "'ab' is too short. Use at least 3 letters!"
   shakeKey?: number; // changes every time the box should shake again
+  locked?: boolean; // true = ignore typing and Enter (the 3 · 2 · 1 before a game)
 }
 
-export function AnswerInput({ onSubmit, warning = null, shakeKey = 0 }: AnswerInputProps) {
+export function AnswerInput({ onSubmit, warning = null, shakeKey = 0, locked = false }: AnswerInputProps) {
   const [text, setText] = useState("");
 
   // useAnimate gives us a `scope` (attach it to an element) and an `animate`
@@ -47,6 +52,7 @@ export function AnswerInput({ onSubmit, warning = null, shakeKey = 0 }: AnswerIn
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault(); // stop the browser from reloading the page
+    if (locked) return; // the game hasn't started yet
     // Pressing Enter on an empty box does nothing. Losing the game because of
     // an accidental key press would feel unfair.
     if (text.trim() === "") return;
@@ -61,7 +67,9 @@ export function AnswerInput({ onSubmit, warning = null, shakeKey = 0 }: AnswerIn
       <input
         ref={scope}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          if (!locked) setText(e.target.value); // locked: the letters just don't appear
+        }}
         autoFocus
         maxLength={MAX_ANSWER_LENGTH}
         // Phones would otherwise capitalise, autocorrect or underline words.

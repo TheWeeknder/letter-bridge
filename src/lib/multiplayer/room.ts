@@ -22,9 +22,15 @@
 //           everyone plays until time is up.
 // In both, the most POINTS wins: one point per letter of every accepted
 // word (see lib/game/scoring.ts), so longer words beat more short ones.
+//
+// THE 3 · 2 · 1: when the host starts, the game really begins
+// START_COUNTDOWN_SECONDS later. startedAt (and round 0's roundStartedAt)
+// is that future moment, so everyone's countdown ends at the same time and
+// nobody's clock runs during it. Answers sent before then are ignored.
 // =============================================================================
 
 import { type GameMode, isSprint, modeSeconds, warnsInstead } from "../game/modes";
+import { START_COUNTDOWN_SECONDS } from "../game/config";
 import { pairForRound } from "../game/random";
 import { scoreFor } from "../game/scoring";
 import type { GameOverReason, LetterPair, WordData } from "../game/types";
@@ -58,7 +64,7 @@ export interface RoomState {
   hostId: string | null; // the player who can start the game
   seed: string | null; // decides the letter pairs (see lib/game/random.ts)
   mode: GameMode | null; // Streak (seconds per word) or Sprint; kept after a game so the host's last choice is remembered
-  startedAt: number | null; // server time (ms) the game began; Sprint's shared clock counts from here
+  startedAt: number | null; // server time (ms) play begins (after the 3 · 2 · 1); Sprint's shared clock counts from here
 }
 
 /** Everything that can happen in a room. `now` is the server's clock in ms. */
@@ -207,6 +213,8 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
       // Already has a seat: rename, and/or come back after a lost connection.
       // Mid-game in Streak, a returning player gets a fresh round clock: their
       // screen starts the round again, and the server's clock should match it.
+      // (Never earlier than startedAt: coming back during the 3 · 2 · 1 must
+      // not start their clock before everyone else's.)
       // Sprint's clock is shared, so it keeps running; nobody gets extra time.
       if (state.players.some((p) => p.id === event.playerId)) {
         return accept(
@@ -216,7 +224,9 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
             connected: true,
             disconnectedAt: null,
             roundStartedAt:
-              p.status === "playing" && state.mode !== null && !isSprint(state.mode) ? event.now : p.roundStartedAt,
+              p.status === "playing" && state.mode !== null && !isSprint(state.mode)
+                ? Math.max(event.now, state.startedAt ?? event.now)
+                : p.roundStartedAt,
           })),
         );
       }
@@ -263,17 +273,19 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
 
       // Round 0's pair is the same for everyone (it only depends on the seed).
       const firstPair = pairForRound(words.eligiblePairs, event.seed, 0, null);
+      // Play begins after the 3 · 2 · 1, the same moment for everyone.
+      const playStartsAt = event.now + START_COUNTDOWN_SECONDS * 1000;
       return accept({
         ...state,
         phase: "playing",
         seed: event.seed,
         mode: event.mode,
-        startedAt: event.now,
+        startedAt: playStartsAt,
         players: state.players.map((p) => ({
           ...lobbyPlayer(p.id, p.name),
           status: "playing",
           pair: firstPair,
-          roundStartedAt: event.now,
+          roundStartedAt: playStartsAt,
         })),
       });
     }
@@ -287,6 +299,8 @@ export function roomReducer(state: RoomState, event: RoomEvent, words?: RoomWord
         return accept(state);
       }
       if (!words || !player.pair || state.seed === null || state.mode === null) return accept(state);
+      // Still counting down (only a tampered page could send this): ignore it.
+      if (state.startedAt !== null && event.now < state.startedAt) return accept(state);
 
       // Too late? The server's clock has the final say.
       const deadline = roundDeadline(player, state);

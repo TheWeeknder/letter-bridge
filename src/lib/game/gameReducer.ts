@@ -11,10 +11,15 @@
 // Anything random (the seed and the next letter pair) is decided OUTSIDE and
 // passed in inside the action.
 //
-// Phases:  setup --START--> playing --FAIL--> over --START--> playing
-//                             ^   |             |
-//                             +---+             +--RESTART--> setup
-//                                                (RESET from anywhere -> setup)
+// Phases:  setup --START--> countdown --GO--> playing --FAIL--> over --START--> countdown
+//                                               ^   |            |
+//                                               +---+            +--RESTART--> setup
+//                                                  (RESET from anywhere -> setup)
+//
+// COUNTDOWN: START doesn't begin play straight away. The "3 · 2 · 1" comes
+// first (START_COUNTDOWN_SECONDS); the pair is picked but hidden and nothing
+// can be answered. The hook (useGame) sends GO when the time is up. The
+// reducer never looks at the clock itself.
 //                        SUBMIT_CORRECT
 //                   (streak + 1, new pair;
 //               Streak: fresh timer, Sprint: same clock)
@@ -51,10 +56,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     // --- Start a brand-new game (from the setup or game-over screen) ---------
     case "START": {
-      if (state.phase === "playing") return state; // already playing: ignore
+      // Already counting down or playing: ignore.
+      if (state.phase === "countdown" || state.phase === "playing") return state;
       return {
         ...state,
-        phase: "playing",
+        phase: "countdown", // the 3 · 2 · 1 first; GO starts the real game
         mode: action.mode,
         seed: action.seed,
         pair: action.pair,
@@ -67,6 +73,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         lastInput: null,
         warning: null,
       };
+    }
+
+    // --- The countdown is over: show the letters, start the clock ----------
+    // (The clock starts by itself: useCountdown only runs while "playing".)
+    case "GO": {
+      if (state.phase !== "countdown") return state;
+      return { ...state, phase: "playing" };
     }
 
     // --- The player's answer was valid: +1 streak, next pair ---------------
