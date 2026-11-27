@@ -48,20 +48,18 @@ export function ModePicker({ onPick, selected = null, bests }: ModePickerProps) 
   const sprintSelected = selected !== null && isSprint(selected);
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-6 mt-5">
       <Section
         title="Streak"
-        hint="Seconds per word, fresh for every word. One wrong word ends it."
+        hint="Seconds per word. One wrong word ends it."
         best={streakBests ? `Best points — ${streakBests}` : undefined}
       >
         <TimeLimitPicker onPick={onPick} selected={selected === null || isSprint(selected) ? null : selected} />
       </Section>
 
-      <section className="text-lg"> OR </section>
-
       <Section
         title="Sprint"
-        hint={`${SPRINT_SECONDS} seconds, as many words as you can. Mistakes only warn you.`}
+        hint={`${SPRINT_SECONDS} seconds, as many words as you can. `}
         best={sprintBest > 0 ? `Best — ${sprintBest} ${sprintBest === 1 ? "point" : "points"}` : undefined}
       >
         <button

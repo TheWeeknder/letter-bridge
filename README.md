@@ -122,7 +122,7 @@ Answers are checked against about 190k words, merged from four files in [data/](
 
 To make a word count, add it to [data/extra-words.txt](data/extra-words.txt) and restart `npm run dev`. To refresh the SCOWL words, run `npm run dict:fetch`. For sources, licenses and more maintenance tips, see [data/SOURCES.md](data/SOURCES.md).
 
-The letter pairs come from a separate list of about 10,000 of the most common English words, with swear words removed (`data/common-10k.txt`). A pair is only offered if at least 15 common words fit it, so every prompt is solvable by a normal person.
+The letter pairs come from a separate list of about 10,000 of the most common English words, with swear words removed (`data/common-10k.txt`). A pair is only offered if at least 10 common words fit it (about 200 pairs), so every prompt is solvable by a normal person.
 
 The whole dictionary is downloaded once, and every check happens in your browser. That keeps answers instant, even on the 3-second timer.
 

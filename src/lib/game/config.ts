@@ -10,8 +10,12 @@
  * A letter pair is only offered to the player if at least this many COMMON
  * words start and end with those letters. This is what prevents "impossible"
  * prompts like START "X", END "q".
+ *
+ * WHY 10: that gives 200 pairs (15 gave 161), including pairs that start with
+ * J and Q. Every pair still has at least 10 EVERYDAY answers, and the full
+ * dictionary accepts many more. Run `npm run stats` to see the trade-off.
  */
-export const MIN_WORDS_PER_PAIR = 15;
+export const MIN_WORDS_PER_PAIR = 10;
 
 /** Answers shorter than this are rejected (so "ae" can't sneak through). */
 export const MIN_WORD_LENGTH = 3;

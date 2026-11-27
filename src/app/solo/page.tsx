@@ -94,7 +94,7 @@ export default function SoloPage() {
       {/* --- Setup: choose a mode --- */}
       {data && state.phase === "setup" && (
         <section className="flex flex-col items-center gap-8 text-center">
-          <ScreenHeader title="Play solo" subtitle="Pick how you want to play. Tap one to start." />
+          <ScreenHeader title="Pick a mode" />
           <ModePicker onPick={startGame} selected={state.mode} bests={bests} />
           <BackLink />
         </section>
