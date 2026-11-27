@@ -1,17 +1,13 @@
 "use client";
 // =============================================================================
-// AnswerInput — the text box. Pressing Enter submits the answer.
+// AnswerInput — the text box. Pressing Enter (or "Go" on a phone keyboard)
+// submits the answer. Phones use their own keyboard; the playing screen sits
+// near the top on phones so the letters stay visible above it.
 //
-// ON PHONES AND TABLETS the phone's own keyboard would slide up over the
-// page, so the box asks it not to open (inputMode="none") and the game shows
-// its own keyboard underneath instead (OnScreenKeyboard). Its keys edit the
-// same text, and its ENTER submits exactly like the real Enter key. The box
-// is still a real <input>, so a physical keyboard, paste and screen readers
-// keep working. Computers get no extra keys (see useTouchKeyboard).
-//
-// The parent renders it with `key={roundId}`. When the round changes, React
-// replaces it with a brand-new input, which is automatically empty and
-// focused (autoFocus). No extra "clear the box" code needed.
+// ONE BOX FOR THE WHOLE GAME: the box stays on screen from the first pair to
+// the last, and simply empties itself after every answer. We deliberately do
+// NOT swap in a new box for each pair: on iPhones, removing the box that has
+// focus closes the keyboard, so it would drop after every correct word.
 //
 // WARNINGS: if the player types a word that's too short or already used,
 // the game doesn't end. Instead the parent passes a `warning` and a new `shakeKey`:
@@ -22,9 +18,7 @@
 
 import { useAnimate, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
-import { useTouchKeyboard } from "@/hooks/useTouchKeyboard";
-import { type KeyboardKey, applyKey } from "./keyboard";
-import { OnScreenKeyboard } from "./OnScreenKeyboard";
+import { MAX_ANSWER_LENGTH } from "@/lib/game/config";
 import { SHAKE_DURATION, SHAKE_X } from "./shake";
 import { INPUT_BASE, INPUT_BORDER } from "./ui";
 
@@ -32,17 +26,10 @@ export interface AnswerInputProps {
   onSubmit: (text: string) => void;
   warning?: string | null; // e.g. "'ab' is too short. Use at least 3 letters!"
   shakeKey?: number; // changes every time the box should shake again
-  highlight?: string[]; // on-screen keyboard: letters to outline (the pair's start and end)
 }
 
-export function AnswerInput({
-  onSubmit,
-  warning = null,
-  shakeKey = 0,
-  highlight,
-}: AnswerInputProps) {
+export function AnswerInput({ onSubmit, warning = null, shakeKey = 0 }: AnswerInputProps) {
   const [text, setText] = useState("");
-  const touch = useTouchKeyboard();
 
   // useAnimate gives us a `scope` (attach it to an element) and an `animate`
   // function to run an animation on that element whenever WE decide, instead
@@ -60,65 +47,41 @@ export function AnswerInput({
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault(); // stop the browser from reloading the page
-    submit();
-  }
-
-  /** Send the answer (real Enter key, or the on-screen ENTER). */
-  function submit() {
     // Pressing Enter on an empty box does nothing. Losing the game because of
     // an accidental key press would feel unfair.
     if (text.trim() === "") return;
     onSubmit(text);
-    // Empty the box after every answer. Correct answers and game overs replace
-    // this component anyway; for a repeated word it means the player can type
-    // a new word straight away without deleting the old one.
+    // Empty the box after every answer, right or wrong, so the next word can
+    // be typed straight away (and the same box keeps focus, see above).
     setText("");
   }
 
-  /** A tap on the on-screen keyboard. */
-  function handleKey(key: KeyboardKey) {
-    if (key === "ENTER") submit();
-    else setText((current) => applyKey(current, key));
-  }
-
   return (
-    <>
-      <form
-        onSubmit={handleSubmit}
-        className="flex w-full flex-col items-center gap-2"
-      >
-        <input
-          ref={scope}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          autoFocus
-          // Phones would otherwise capitalise, autocorrect or underline words.
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          // The phone keyboard's Enter key says "Go" instead of a return arrow.
-          enterKeyHint="go"
-          // Touch screens: don't open the phone's keyboard; ours is below.
-          inputMode={touch ? "none" : undefined}
-          aria-label="Your word"
-          // Links the box to the warning, so screen readers read it as a hint.
-          aria-describedby={warning ? "answer-warning" : undefined}
-          aria-invalid={warning ? true : undefined}
-          placeholder={touch ? "Type a word" : "Type a word, press Enter"}
-          className={`${INPUT_BASE} py-3 text-2xl short:py-1.5 ${warning ? INPUT_BORDER.invalid : INPUT_BORDER.normal}`}
-        />
-        {/* role="status": screen readers announce the warning when it appears. */}
-        <p id="answer-warning" role="status" className="min-h-6 text-danger">
-          {warning}
-        </p>
-      </form>
-      {/* A sibling of the form, so the playing screen can push it to the bottom. */}
-      {touch && (
-        <div className="mt-auto flex w-full justify-center">
-          <OnScreenKeyboard onKey={handleKey} highlight={highlight} />
-        </div>
-      )}
-    </>
+    <form onSubmit={handleSubmit} className="flex w-full flex-col items-center gap-2">
+      <input
+        ref={scope}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        autoFocus
+        maxLength={MAX_ANSWER_LENGTH}
+        // Phones would otherwise capitalise, autocorrect or underline words.
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        // The phone keyboard's Enter key says "Go" instead of a return arrow.
+        enterKeyHint="go"
+        aria-label="Your word"
+        // Links the box to the warning, so screen readers read it as a hint.
+        aria-describedby={warning ? "answer-warning" : undefined}
+        aria-invalid={warning ? true : undefined}
+        placeholder="Type a word"
+        className={`${INPUT_BASE} py-3 text-2xl compact:py-1.5 ${warning ? INPUT_BORDER.invalid : INPUT_BORDER.normal}`}
+      />
+      {/* role="status": screen readers announce the warning when it appears. */}
+      <p id="answer-warning" role="status" className="min-h-6 text-danger">
+        {warning}
+      </p>
+    </form>
   );
 }

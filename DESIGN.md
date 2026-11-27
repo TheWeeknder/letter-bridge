@@ -184,7 +184,7 @@ Zilla Slab is a free (SIL Open Font Licence) heavy slab serif, chosen to give th
 | Required-letter tile (playing screen, landing example) | `LetterTile accent`: `border-3 border-accent` | 96×96 hero / 62×62 small |
 | Hero letter tile (while playing) | `size-hero-tile text-7xl` | 96×96 |
 
-**Start and end letters share one colour:** both get the emerald outline, matching the wordmark's W and d and the outlined keyboard keys. Position, case and the captions tell them apart; a second hue would read as a status (red = problem). Outline, not fill: a filled green tile reads as "correct", and white on emerald is too low-contrast.
+**Start and end letters share one colour:** both get the emerald outline, matching the wordmark's W and d. Position, case and the captions tell them apart; a second hue would read as a status (red = problem). Outline, not fill: a filled green tile reads as "correct", and white on emerald is too low-contrast.
 | Key height | `h-key` | 58px |
 | Button height | `min-h-12` | 48px (keeps the 48px tap target, a little over the reference's 44) |
 
@@ -211,7 +211,6 @@ Use these instead of repeating the classes:
 | `LIST_CARD` | A bordered list card with thin lines between rows (high scores, players, standings) |
 | `INPUT_BASE` + `INPUT_BORDER` | A text box with a 2px tile-style border. The border darkens while you type and turns red after a wrong try |
 | `LetterTile` (in `LetterPair.tsx`) | One letter in a square tile, `hero` or `small` size |
-| `OnScreenKeyboard` | The in-game QWERTY keyboard for touch screens (`bg-key rounded-key`, `h-key`); the current start and end letters get `ring-2 ring-accent` |
 
 ### Buttons
 | Kind | Classes |
@@ -230,14 +229,13 @@ Use these instead of repeating the classes:
 | Divider | `border-t border-line` (the top bar uses `border-b border-line`) |
 
 ### Layout
-- **Short screens:** the `short:` variant (`max-height: 720px`) tightens the playing screen so the on-screen keyboard fits: hero tiles drop to `size-tile`, gaps shrink, keys become `h-11`, and the top bar gets smaller.
-- The page uses `min-h-dvh` (the height you can really see on iPhones) and `viewport-fit=cover`; the keyboard pads itself with `env(safe-area-inset-bottom)`.
+- **Phones and short screens:** the `compact:` variant (touch phones up to 767px wide, or any window under 720px tall). While you type, the phone keyboard covers the bottom half, so the playing screen moves to the **top** (`compact:justify-start`) and tightens: hero tiles drop to `size-tile`, gaps shrink, the "Points" label hides and the top bar gets smaller. The answer box then ends above the keyboard, so Safari doesn't scroll the letters out of view.
+- The page uses `min-h-dvh` (the height you can really see on iPhones).
 - **Wordmark:** "Weld" in the slab font, with the **W** and **d** in `text-accent` (the bright emerald; fine here because the wordmark is big): the start and end letters, welded into one word.
 - A full-width top bar (`h-16`, thin line under it) with the game name, from `AppShell`.
 - One centred column below it. Content is no wider than `max-w-sm` for text.
 - Use `max-w-xs` for buttons and lists.
 - `max-w-board` (330px) for a row of tiles.
-- `max-w-keyboard` (500px) for keys.
 - `max-w-modal` (520px) for dialogs.
 - Check every screen at phone width (~390px), in light and dark mode.
 

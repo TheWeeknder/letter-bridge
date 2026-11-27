@@ -15,8 +15,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       {/* The app's name, small, so each screen's own title ("How to play",
           "Game over") is the clear headline. The bar spans the full width. */}
-      <header className="flex h-16 shrink-0 items-center justify-center border-b border-line short:h-12">
-        <h1 className="font-display text-3xl short:text-2xl">
+      <header className="flex h-16 shrink-0 items-center justify-center border-b border-line compact:h-12">
+        <h1 className="font-display text-3xl compact:text-2xl">
           {/* "Weld" with the W and d in emerald: the start and end letters,
               welded into one word, just like an answer in the game. */}
           <Link href="/">
@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* The current screen, centred in the space below the bar. */}
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 px-6 pt-8 pb-4 short:pt-4">
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-8 px-6 pt-8 pb-4 compact:pt-3">
         {children}
       </main>
     </>

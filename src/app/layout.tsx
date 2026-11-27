@@ -46,9 +46,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Lets the page use the whole screen on iPhones with a home bar; the
-  // on-screen keyboard adds env(safe-area-inset-bottom) so it sits above it.
-  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: BACKGROUND_LIGHT },
     { media: "(prefers-color-scheme: dark)", color: BACKGROUND_DARK },

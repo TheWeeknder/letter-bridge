@@ -35,11 +35,13 @@ export function ScoreCounter({ points, words, wordsText, lastWordPoints, best }:
 
   return (
     <div className="flex flex-col items-center gap-1 text-center">
-      <div className="text-sm text-muted">Points</div>
+      {/* Hidden on phones to save room above the keyboard; the big number
+          and the "+N" make it obvious what it is. */}
+      <div className="text-sm text-muted compact:hidden">Points</div>
       <div className="relative">
         <motion.div
           key={points}
-          className="text-4xl font-bold tabular-nums short:text-3xl"
+          className="text-4xl font-bold tabular-nums compact:text-3xl"
           // No pop on the very first render of a game (0 points).
           // `false` = start at the final size, no animation.
           initial={reduceMotion || points === 0 ? false : { scale: 1.4 }}

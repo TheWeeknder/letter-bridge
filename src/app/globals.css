@@ -13,10 +13,21 @@
 
 @import "tailwindcss";
 
-/* `short:` = phones with little height to spare (e.g. Safari with its bars
-   showing, or an iPhone SE). The playing screen tightens up so the letters,
-   timer, answer box AND the on-screen keyboard all fit without scrolling. */
-@custom-variant short (@media (max-height: 720px));
+/* `compact:` = touch PHONES (not tablets) and any short window. On a phone
+   the keyboard slides up over the bottom half of the screen while you type,
+   so the playing screen moves to the top and tightens up: the letters, timer
+   and answer box then all fit above the keyboard, and Safari doesn't have to
+   scroll the letters out of view. */
+/* Written as a block with two @media rules: the one-line form breaks on the
+   comma (Tailwind splits it and glues the second half onto the class name). */
+@custom-variant compact {
+  @media (max-height: 720px) {
+    @slot;
+  }
+  @media (pointer: coarse) and (max-width: 767px) {
+    @slot;
+  }
+}
 
 /* ---- Light mode colours ------------------------------------------------- */
 :root {
@@ -97,11 +108,10 @@
   /* Fixed sizes → size-tile, size-hero-tile, h-key … */
   --spacing-tile: 62px; /* a letter tile is 62×62 */
   --spacing-hero-tile: 96px; /* the big start/end letter tiles while playing */
-  --spacing-key: 58px; /* an on-screen key is 58 tall */
+  --spacing-key: 58px; /* a keyboard-style key (the mode keys) is 58 tall */
 
-  /* Column widths → max-w-board, max-w-keyboard, max-w-modal */
+  /* Column widths → max-w-board, max-w-modal */
   --container-board: 330px;
-  --container-keyboard: 500px;
   --container-modal: 520px;
 
   /* The only shadow: a floating card or dialog → shadow-card */

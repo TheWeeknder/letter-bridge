@@ -12,8 +12,7 @@
 //      so even without the font you always know which is which.
 //
 // COLOUR: both required letters get the same thick emerald outline, just
-// like the W and d of the "Weld" wordmark and the outlined keys on the
-// on-screen keyboard: the two ends of one word. One colour for both on
+// like the W and d of the "Weld" wordmark: the two ends of one word. One colour for both on
 // purpose: position, case and captions already tell them apart, and a
 // second colour (amber, red) would look like a warning.
 //
@@ -31,7 +30,7 @@ export interface LetterPairProps {
 
 /** The two tile sizes: "hero" while playing, "small" for examples. */
 const TILE_SIZES = {
-  hero: "size-hero-tile text-7xl short:size-tile short:text-5xl",
+  hero: "size-hero-tile text-7xl compact:size-tile compact:text-5xl",
   small: "size-tile text-tile",
 } as const;
 
@@ -75,7 +74,7 @@ export function LetterPair({ pair }: LetterPairProps) {
     <div className="flex items-start gap-4" aria-label={`Starts with ${start}, ends with lowercase ${end}`}>
       <LetterBox letter={start} caption="starts with" />
       {/* Centred on the tiles (hero tile = 96px tall, 62px on short screens). */}
-      <span className="flex h-hero-tile items-center text-4xl text-muted short:h-tile short:text-2xl" aria-hidden>
+      <span className="flex h-hero-tile items-center text-4xl text-muted compact:h-tile compact:text-2xl" aria-hidden>
         …
       </span>
       <LetterBox letter={end} caption="ends with" />
