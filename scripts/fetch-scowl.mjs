@@ -21,8 +21,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 // --- Settings ----------------------------------------------------------------
 // SIZE controls how big the list is. 70 = words a normal person might use.
-// 80 adds ~17k more, rarer words ("artiodactylous"). Bigger = more obscure.
-const SIZE = 70;
+// 80 (what we use) adds ~17k rarer but real words ("revocably",
+// "transborder"). 95 adds ~64k more, mostly archaic or near-junk
+// ("quinquefarious"), so we stop at 80.
+const SIZE = 80;
 
 // The SCOWL website builds a custom list from these options:
 //   spelling=US & spelling=GBs  -> American AND British spellings ("color", "colour")

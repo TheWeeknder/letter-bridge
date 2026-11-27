@@ -179,6 +179,21 @@ describe("the bigger dictionary (ENABLE + SCOWL additions + proper-nouns.txt + e
     }
   });
 
+  it("accepts rarer but real words from SCOWL size 80", () => {
+    for (const word of ["revocably", "transborder"]) {
+      expect(realWord(word)).toEqual({ ok: true, word });
+    }
+  });
+
+  it('rejects "rampants": "rampant" is an adjective, so it has no plural', () => {
+    // A player reported this as a missing word. It isn't one: no dictionary
+    // (not even SCOWL size 95) has it. The real relatives are accepted.
+    expect(realWord("rampants")).toEqual({ ok: false, reason: "NOT_A_WORD" });
+    for (const word of ["rampant", "rampantly", "rampancy"]) {
+      expect(realWord(word)).toEqual({ ok: true, word });
+    }
+  });
+
   it("still rejects names, because SCOWL names are left out on purpose", () => {
     // "Brittney" is in SCOWL, but only with a capital letter (it's a name).
     expect(realWord("brittney")).toEqual({ ok: false, reason: "NOT_A_WORD" });

@@ -114,9 +114,9 @@ The game needs an internet connection to load the first time. Offline play (a se
 
 ## The dictionary
 
-Answers are checked against about 190k words, merged from four files in [data/](data/):
+Answers are checked against about 207k words, merged from four files in [data/](data/):
 - `enable1.txt`: the main list
-- `scowl-additions.txt`: newer words like "selfie"
+- `scowl-additions.txt`: newer and rarer words like "selfie" and "revocably" (SCOWL size 80)
 - `proper-nouns.txt`: everyday capitalised words the big lists skip, like "april", "monday", "canada", "french", "texas" and "london" (months, days, holidays, countries, nationalities, languages, states and big cities; no first names or brands)
 - `extra-words.txt`: words you add by hand, like "nile"
 
@@ -158,9 +158,31 @@ The most important design choice is that **the rules in `src/lib/game` know noth
 - They can be tested with plain function calls.
 - They run on the room server unchanged: `party/server.ts` imports the same `lib/game` and `lib/multiplayer` code the browser uses.
 
-## Tech
+## Tech stack
 
-[Next.js](https://nextjs.org) (App Router) · React · TypeScript · [Tailwind CSS](https://tailwindcss.com) · [Motion](https://motion.dev) for animations · [PartyServer](https://github.com/cloudflare/partykit/tree/main/packages/partyserver) on Cloudflare Durable Objects for multiplayer rooms · [Vitest](https://vitest.dev) for tests · font: [Atkinson Hyperlegible Next](https://www.brailleinstitute.org/freefont/), so a capital "I" and a lowercase "l" never look alike.
+| Part | What we use | Notes |
+|---|---|---|
+| Framework | [Next.js](https://nextjs.org) 16 (App Router), [React](https://react.dev) 19, TypeScript | The whole site, solo and multiplayer screens |
+| Styling | [Tailwind CSS](https://tailwindcss.com) v4 | Colours, sizes and fonts are design tokens in `src/app/globals.css` (see [DESIGN.md](DESIGN.md)), with automatic light and dark mode |
+| Animation | [Motion](https://motion.dev) | The 3 · 2 · 1 countdown, score pop, timer bar and the "wrong word" shake. Respects "reduce motion" |
+| Fonts | [Atkinson Hyperlegible Next](https://www.brailleinstitute.org/freefont/) and [Zilla Slab](https://fonts.google.com/specimen/Zilla+Slab), via `next/font` | Atkinson for text and letters, so a capital "I" and a lowercase "l" never look alike. Zilla Slab for big headings |
+| Multiplayer | [PartyServer](https://github.com/cloudflare/partykit/tree/main/packages/partyserver) on Cloudflare Durable Objects, [partysocket](https://github.com/cloudflare/partykit/tree/main/packages/partysocket) in the browser | One small server per room code, over WebSockets. partysocket reconnects by itself when a connection drops |
+| QR codes | [qrcode.react](https://github.com/zpao/qrcode.react) | The "scan to join" code in the lobby |
+| Word lists | ENABLE, SCOWL and two hand-picked lists | Plain text files, see [The dictionary](#the-dictionary) |
+| Testing and checks | [Vitest](https://vitest.dev), TypeScript (`tsc`), ESLint | Unit tests cover the game and room rules (`npm test`) |
+| Hosting | [Vercel](https://vercel.com) (site) and [Cloudflare Workers](https://workers.cloudflare.com) (room server) | The site deploys on every push to `main`. The room server deploys with `npm run party:deploy` |
+
+There's no database and no accounts. Everything the game needs is either static files or lives in memory.
+
+### Caching and storage
+
+- **Pages: prerendered and cached at the edge.** `cacheComponents` is on in `next.config.ts`, so Next.js prerenders each page at build time into a static "shell" (Partial Prerendering) that Vercel serves straight from its CDN. `partialPrefetching` makes links download that shell ahead of time, so moving between screens is instant. Pages you've visited are kept alive (hidden, not thrown away), so going back is instant too.
+- **Word lists: downloaded once, kept in memory.** The lists are static files in `/public/data` (copied from `data/` at build time), served by the CDN. The browser downloads all of them in parallel the first time they're needed, builds the lookup tables once, and keeps the result in memory (`src/lib/browser/loadWordData.ts`), so every screen shares one copy.
+- **Fonts: self-hosted.** `next/font` downloads the fonts at build time and serves them from our own site, so there are no requests to Google.
+- **Room server: in memory, per room.** Each room's state lives only in its Durable Object's memory while people are in it. Nothing is written to disk; a room disappears once everyone has left. The dictionary is bundled into the server and built once per room server (`party/words.ts`).
+- **On the player's device:**
+  - `localStorage` keeps the high score boards and your nickname, so they survive closing the browser. The keys start with `letter-bridge:`, the game's old name, so nobody's scores were lost in the rename.
+  - `sessionStorage` keeps a secret per-tab token that proves a seat is yours when you reconnect to a room.
 
 ## License
 

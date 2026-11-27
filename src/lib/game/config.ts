@@ -65,7 +65,7 @@ export const EXAMPLE_WORD_COUNT = 2;
  * The game merges them into one big list, so a word counts if it is in ANY of
  * them. To add another list, drop the file in /data and add its name here.
  *   enable1.txt          ~173k words, the main list
- *   scowl-additions.txt  ~17k newer words ENABLE lacks ("blog", "selfie")
+ *   scowl-additions.txt  ~34k newer and rarer words ENABLE lacks ("blog", "revocably")
  *   proper-nouns.txt     capitalised everyday words the big lists skip:
  *                        months, days, holidays, countries, nationalities,
  *                        languages, states and big cities ("april", "canada")
